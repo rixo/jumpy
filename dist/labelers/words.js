@@ -12,13 +12,14 @@ function getVisibleColumnRange(editorView) {
     const maxColumn = editorView.getScrollRight() / charWidth;
     return [
         minColumn,
-        maxColumn
+        maxColumn,
     ];
 }
 // Taken from jQuery: https://github.com/jquery/jquery/blob/master/src/css/hiddenVisibleSelectors.js
 function isVisible(element) {
     return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
+const isMaj = k => /[A-Z]/.test(k)
 class WordLabel {
     destroy() {
         this.marker.destroy();
@@ -27,7 +28,10 @@ class WordLabel {
         const { textEditor, lineNumber, column, keyLabel } = this;
         this.marker = textEditor.markScreenRange(new atom_1.Range(new atom_1.Point(lineNumber, column), new atom_1.Point(lineNumber, column)), { invalidate: 'touch' });
         const labelElement = document.createElement('div');
-        labelElement.textContent = keyLabel;
+        // labelElement.textContent = keyLabel;
+        labelElement.innerHTML = keyLabel.split('')
+          .map(k => `<span class="rx-jumpy-key${isMaj(k) ? ' uppercase' : ''}">${k}</span>`)
+          .join('')
         labelElement.style.fontSize = this.settings.fontSize;
         labelElement.classList.add('jumpy-label'); // For styling and tests
         if (this.settings.highContrast) {
@@ -36,7 +40,7 @@ class WordLabel {
         const decoration = textEditor.decorateMarker(this.marker, {
             type: 'overlay',
             item: labelElement,
-            position: 'head'
+            position: 'head',
         });
         this.element = labelElement;
         return this;
@@ -49,7 +53,7 @@ class WordLabel {
         beacon.classList.add('beacon'); // For styling and tests
         this.textEditor.decorateMarker(marker, {
             item: beacon,
-            type: 'overlay'
+            type: 'overlay',
         });
         setTimeout(function () {
             marker.destroy();
@@ -70,8 +74,8 @@ class WordLabel {
         // isVisualMode is for vim-mode or vim-mode-plus:
         const isVisualMode = editorView.classList.contains('visual-mode');
         // isSelected is for regular selection in atom or in insert-mode in vim
-        const isSelected = (currentEditor.getSelections().length === 1 &&
-            currentEditor.getSelectedText() !== '');
+        const isSelected = (currentEditor.getSelections().length === 1
+            && currentEditor.getSelectedText() !== '');
         const position = atom_1.Point(this.lineNumber, this.column);
         if (isVisualMode || isSelected) {
             currentEditor.selectToScreenPosition(position);
@@ -132,6 +136,10 @@ const labeler = function (env) {
                         label.lineNumber = lineNumber;
                         label.column = column;
                         labels.push(label);
+                    }
+                    // prevent infinite loop with, for example /^$/.test('')
+                    if (lineContents.length === 0) {
+                      break
                     }
                 }
             }

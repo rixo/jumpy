@@ -48,7 +48,10 @@ class WordLabel implements Label {
             { invalidate: 'touch'});
 
         const labelElement = document.createElement('div');
-        labelElement.textContent = keyLabel;
+        // labelElement.textContent = keyLabel;
+        labelElement.innerHTML = keyLabel.split('').map(
+          k => `<span class="rx-jumpy-key">${k}</span>`
+        )
         labelElement.style.fontSize = this.settings.fontSize;
         labelElement.classList.add('jumpy-label'); // For styling and tests
 

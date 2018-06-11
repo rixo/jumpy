@@ -2,6 +2,7 @@
 'use babel';
 Object.defineProperty(exports, "__esModule", { value: true });
 const atom_1 = require("atom");
+const isMaj = k => /[A-Z]/.test(k)
 class TabLabel {
     destroy() {
         if (this.element) {
@@ -18,7 +19,10 @@ class TabLabel {
         }
         const labelElement = document.createElement('div');
         if (this.keyLabel) {
-            labelElement.textContent = this.keyLabel;
+            // labelElement.textContent = this.keyLabel;
+            labelElement.innerHTML = this.keyLabel.split('')
+              .map(k => `<span class="rx-jumpy-key${isMaj(k) ? ' uppercase' : ''}">${k}</span>`)
+              .join('')
         }
         labelElement.style.position = 'fixed';
         labelElement.classList.add('jumpy-label'); // For styling and tests

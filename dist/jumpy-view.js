@@ -25,7 +25,7 @@ class JumpyView {
                 { name: 'key', from: 'on', to: 'on' },
                 { name: 'reset', from: 'on', to: 'on' },
                 { name: 'jump', from: 'on', to: 'off' },
-                { name: 'exit', from: 'on', to: 'off' }
+                { name: 'exit', from: 'on', to: 'off' },
             ],
             callbacks: {
                 onactivate: (event, from, to) => {
@@ -58,7 +58,7 @@ class JumpyView {
                     }
                     const environment = {
                         keys: keys_1.getKeySet(atom.config.get('jumpy.customKeys')),
-                        settings: this.settings
+                        settings: this.settings,
                     };
                     // TODO: reduce with concat all labelers -> labeler.getLabels()
                     const wordLabels = words_1.default(environment);
@@ -67,7 +67,7 @@ class JumpyView {
                     // maybe I call labeler.draw() still returns back anyway? Less functional?
                     this.allLabels = [
                         ...wordLabels,
-                        ...tabLabels
+                        ...tabLabels,
                     ];
                     for (const label of this.allLabels) {
                         this.drawnLabels.push(label.drawLabel());
@@ -98,7 +98,9 @@ class JumpyView {
                         if (!label.keyLabel || !label.element) {
                             continue;
                         }
-                        if (!label.keyLabel.startsWith(this.currentKeys)) {
+                        if (label.keyLabel.startsWith(this.currentKeys)) {
+                            label.element.classList.add('hot')
+                        } else {
                             label.element.classList.add('irrelevant');
                         }
                     }
@@ -119,6 +121,7 @@ class JumpyView {
                     for (const label of this.currentLabels) {
                         if (label.element) {
                             label.element.classList.remove('irrelevant');
+                            label.element.classList.remove('hot');
                         }
                     }
                 },
@@ -140,8 +143,8 @@ class JumpyView {
                     if (this.statusBarJumpy) {
                         this.statusBarJumpy.classList.remove('no-match');
                     }
-                }
-            }
+                },
+            },
         });
         // TODO: do I need the () => or just =>
         this.commands.add(atom.commands.add('atom-workspace', {
@@ -155,7 +158,7 @@ class JumpyView {
                 if (this.fsm.can('exit')) {
                     this.fsm.exit();
                 }
-            }
+            },
         }));
     }
     // This needs to be called when status bar is ready, so can't be called from constructor
@@ -171,7 +174,7 @@ class JumpyView {
             statusBarJumpyElement.innerHTML = 'Jumpy: <span class="status"></span>';
             this.statusBar.addLeftTile({
                 item: statusBarJumpyElement,
-                priority: -1
+                priority: -1,
             });
             this.statusBarJumpy = this.statusBar.querySelector('#status-bar-jumpy');
             if (this.statusBarJumpy) {
@@ -199,7 +202,7 @@ class JumpyView {
         this.settings = {
             fontSize: fontSizeString,
             highContrast: atom.config.get('jumpy.highContrast'),
-            wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g')
+            wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g'),
         };
     }
     toggle() {

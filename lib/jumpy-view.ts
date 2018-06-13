@@ -26,7 +26,7 @@ export default class JumpyView {
     drawnLabels: Array<Label>;
     keydownListener: any;
     settings: any;
-    statusBar: HTMLElement | null;
+    statusBar: any;
     statusBarJumpy: HTMLElement | null;
     statusBarJumpyStatus: HTMLElement | null;
     savedInheritedDisplay: any;
@@ -48,6 +48,7 @@ export default class JumpyView {
             ],
             callbacks: {
                 onactivate: (event: any, from: string, to: string ) => {
+                    console.time('onactivate')
                     this.keydownListener = (event: any) => {
                         // use the code property for testing if
                         // the key is relevant to Jumpy
@@ -76,7 +77,8 @@ export default class JumpyView {
                         this.workspaceElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
                     }
 
-                    const treeView:HTMLCollectionOf<Element> = document.getElementsByClassName('tree-view');
+                    const treeView:HTMLCollectionOf<HTMLElement> =
+                      <HTMLCollectionOf<HTMLElement>> document.getElementsByClassName('tree-view');
                     if (treeView.length) {
                         addJumpModeClasses(treeView[0]);
                     }
@@ -86,6 +88,7 @@ export default class JumpyView {
                         settings: this.settings
                     };
 
+                    console.time('getWordLabels')
                     // TODO: reduce with concat all labelers -> labeler.getLabels()
                     const wordLabels:Array<Label> = getWordLabels(environment);
                     const tabLabels:Array<Label> = getTabLabels(environment);
@@ -96,12 +99,16 @@ export default class JumpyView {
                         ...wordLabels,
                         ...tabLabels
                     ];
+                    console.timeEnd('getWordLabels')
 
+                    console.time('draw labels')
                     for (const label of this.allLabels) {
                         this.drawnLabels.push(label.drawLabel());
                     }
+                    console.timeEnd('draw labels')
 
                     this.currentLabels = _.clone(this.allLabels);
+                    console.timeEnd('onactivate')
                 },
 
                 onkey: (event: any, from: string, to: string, character: string) => {
@@ -131,7 +138,9 @@ export default class JumpyView {
                         if (!label.keyLabel || !label.element) {
                             continue;
                         }
-                        if (!label.keyLabel.startsWith(this.currentKeys)) {
+                        if (label.keyLabel.startsWith(this.currentKeys)) {
+                          label.element.classList.add('hot')
+                        } else {
                             label.element.classList.add('irrelevant');
                         }
                     }
@@ -157,6 +166,7 @@ export default class JumpyView {
                     for (const label of this.currentLabels) {
                         if (label.element) {
                             label.element.classList.remove('irrelevant');
+                            label.element.classList.remove('hot');
                         }
                     }
                 },
@@ -252,7 +262,9 @@ export default class JumpyView {
 
     toggle() {
         if (this.fsm.can('activate')) {
+            console.time('activate')
             this.fsm.activate();
+            console.timeEnd('activate')
         } else if (this.fsm.can('exit')) {
             this.fsm.exit();
         }

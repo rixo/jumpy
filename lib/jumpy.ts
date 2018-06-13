@@ -52,5 +52,10 @@ module.exports = {
         return {
             jumpyViewState: this.jumpyView.serialize()
         };
+    },
+
+    consumeToolbar(toolbar) {
+      // TODO use status bar API
+      this.statusBar = toolbar
     }
 };

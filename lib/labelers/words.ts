@@ -23,6 +23,8 @@ function isVisible(element) {
     return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
 
+const isMaj = k => /[A-Z]/.test(k)
+
 class WordLabel implements Label {
     // TODO: check I need these defined again?
     keyLabel: string | undefined;
@@ -49,9 +51,9 @@ class WordLabel implements Label {
 
         const labelElement = document.createElement('div');
         // labelElement.textContent = keyLabel;
-        labelElement.innerHTML = keyLabel.split('').map(
-          k => `<span class="rx-jumpy-key">${k}</span>`
-        )
+        labelElement.innerHTML = keyLabel.split('')
+          .map(k => `<span class="rx-jumpy-key${isMaj(k) ? ' uppercase' : ''}">${k}</span>`)
+          .join('')
         labelElement.style.fontSize = this.settings.fontSize;
         labelElement.classList.add('jumpy-label'); // For styling and tests
 
@@ -173,6 +175,10 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
                         label.lineNumber = lineNumber;
                         label.column = column;
                         labels.push(label);
+                    }
+                    // prevent infinite loop with, for example /^$/.test('')
+                    if (lineContents.length === 0) {
+                      break
                     }
                 }
             }

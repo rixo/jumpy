@@ -46,6 +46,41 @@ const createLabelElement = (textEditor, column, keyLabel, settings) => {
     labelElement.style.left = `${textEditor.defaultCharWidth * column}px`;
     return labelElement;
 };
+const selectVisualMode = (editor, destination) => {
+    const cursorPosition = editor.getCursorScreenPosition();
+    const { row: cursorRow, column: cursorCol } = cursorPosition;
+    const { row: targetRow, column: targetCol } = destination;
+    const isJumpBefore = cursorRow > targetRow
+        || cursorRow === targetRow && cursorCol > targetCol;
+    const selection = editor.getLastSelection();
+    if (!selection) {
+        return;
+    }
+    const { start, end } = selection.getBufferRange();
+    if (isJumpBefore) {
+        if (selection.getText().length === 1) {
+            editor.setSelectedScreenRange([destination, end], { reversed: true });
+        }
+        else if (selection.isReversed()) {
+            editor.setSelectedScreenRange([destination, end], { reversed: true });
+        }
+        else {
+            start.column++;
+            editor.setSelectedScreenRange([destination, start], { reversed: true });
+        }
+    }
+    else {
+        if (selection.isReversed()) {
+            end.column--;
+            destination.column++;
+            editor.setSelectedScreenRange([end, destination], { reversed: false });
+        }
+        else {
+            destination.column++;
+            editor.selectToScreenPosition(destination);
+        }
+    }
+};
 class WordLabel {
     destroy() {
         // this.marker.destroy();
@@ -59,7 +94,7 @@ class WordLabel {
     }
     animateBeacon(input) {
         const position = input;
-        const range = atom_1.Range(position, position);
+        const range = new atom_1.Range(position, position);
         const marker = this.textEditor.markScreenRange(range, { invalidate: 'never' });
         const beacon = document.createElement('span');
         beacon.classList.add('beacon'); // For styling and tests
@@ -88,8 +123,11 @@ class WordLabel {
         // isSelected is for regular selection in atom or in insert-mode in vim
         const isSelected = (currentEditor.getSelections().length === 1 &&
             currentEditor.getSelectedText() !== '');
-        const position = atom_1.Point(this.lineNumber, this.column);
-        if (isVisualMode || isSelected) {
+        const position = new atom_1.Point(this.lineNumber, this.column);
+        if (isVisualMode) {
+            selectVisualMode(currentEditor, position);
+        }
+        else if (isSelected) {
             currentEditor.selectToScreenPosition(position);
         }
         else {

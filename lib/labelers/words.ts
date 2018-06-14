@@ -3,7 +3,15 @@
 import * as _ from 'lodash';
 import { LabelEnvironment, Label, Labeler } from '../label-interface';
 import { addJumpModeClasses } from '../viewHelpers';
-import { Point, Range, TextEditor } from 'atom';
+import { Point, Range, TextEditor as TextEditorBase } from 'atom';
+
+interface TextEditor extends TextEditorBase {
+  // accessing the private member directly because it is used in the
+  // performance critical loop of displaying labels, and we don't
+  // want to jumb through hoops to get the value from editor each time
+  defaultCharWidth: number
+  getVisibleRowRange(): [number, number]
+}
 
 function getVisibleColumnRange (editorView: any): Array<number> {
     const charWidth = editorView.getDefaultCharacterWidth()
@@ -57,6 +65,38 @@ const createLabelElement = (
   return labelElement
 }
 
+const selectVisualMode = (editor: TextEditor, destination: Point) => {
+  const cursorPosition = editor.getCursorScreenPosition()
+  const {row: cursorRow, column: cursorCol} = cursorPosition
+  const {row: targetRow, column: targetCol} = destination
+  const isJumpBefore = cursorRow > targetRow
+    || cursorRow === targetRow && cursorCol > targetCol
+  const selection = editor.getLastSelection()
+  if (!selection) {
+    return
+  }
+  const {start, end} = selection.getBufferRange()
+  if (isJumpBefore) {
+    if (selection.getText().length === 1) {
+      editor.setSelectedScreenRange([destination, end], {reversed: true})
+    } else if (selection.isReversed()) {
+      editor.setSelectedScreenRange([destination, end], {reversed: true})
+    } else {
+      start.column++
+      editor.setSelectedScreenRange([destination, start], {reversed: true})
+    }
+  } else {
+    if (selection.isReversed()) {
+      end.column--
+      destination.column++
+      editor.setSelectedScreenRange([end, destination], {reversed: false})
+    } else {
+      destination.column++
+      editor.selectToScreenPosition(destination)
+    }
+  }
+}
+
 class WordLabel implements Label {
     // TODO: check I need these defined again?
     keyLabel: string | undefined;
@@ -85,7 +125,7 @@ class WordLabel implements Label {
 
     animateBeacon(input: any) {
         const position = input;
-        const range = Range(position, position);
+        const range = new Range(position, position);
         const marker = this.textEditor.markScreenRange(range, { invalidate: 'never' });
         const beacon = document.createElement('span');
         beacon.classList.add('beacon'); // For styling and tests
@@ -119,9 +159,10 @@ class WordLabel implements Label {
         // isSelected is for regular selection in atom or in insert-mode in vim
         const isSelected = (currentEditor.getSelections().length === 1 &&
             currentEditor.getSelectedText() !== '');
-        const position = Point(this.lineNumber, this.column);
-        if (isVisualMode || isSelected) {
-            position.column++ // we want to select the target char too
+        const position = new Point(this.lineNumber, this.column);
+        if (isVisualMode) {
+            selectVisualMode(currentEditor, position)
+        } else if (isSelected) {
             currentEditor.selectToScreenPosition(position);
         } else {
             currentEditor.setCursorScreenPosition(position);
@@ -136,7 +177,7 @@ class WordLabel implements Label {
 const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
     const labels:Array<WordLabel> = [];
     env.settings.wordsPattern.lastIndex = 0; // reset the RegExp for subsequent calls.
-    for (const textEditor:AtomCore.IEditor of <Array<AtomCore.IEditor>>atom.workspace.getTextEditors()) {
+    for (const textEditor of <Array<TextEditor>>atom.workspace.getTextEditors()) {
         const editorView = atom.views.getView(textEditor);
 
         // 'jumpy-jump-mode is for keymaps and utilized by tests

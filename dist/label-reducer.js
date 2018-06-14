@@ -1,5 +1,5 @@
-"use strict";
 'use babel';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // (PURE FUNCTION)
 //

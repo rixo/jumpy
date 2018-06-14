@@ -2,7 +2,7 @@
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
-    "lib": ["es6", "dom"],
+    "lib": ["es2017", "dom"],
     "module": "commonjs",
     "noLib": false,
     "outDir": "../dist",
@@ -10,7 +10,9 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": false,
-    "target": "es6"
+    "noUnusedParameters": false,
+    "noUnusedLocals": false,
+    "target": "es2017"
   },
   "compileOnSave": true
 }

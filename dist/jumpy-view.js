@@ -16,6 +16,49 @@ const assert = value => {
     if (!value)
         throw new Error('Failed assertion');
 };
+const createMarkerManager = () => {
+    const cache = {};
+    const layers = {};
+    const getLineTop = (editor, lineNumber) => {
+        const id = editor.id;
+        if (!cache[id]) {
+            cache[id] = {};
+        }
+        if (cache[id][lineNumber] === undefined) {
+            const editorEl = atom.views.getView(editor);
+            const lineEl = editorEl.querySelector(`.line[data-screen-row="${lineNumber}"]`);
+            cache[id][lineNumber] = lineEl
+                ? lineEl.getBoundingClientRect().top
+                : null;
+        }
+        return cache[id][lineNumber];
+    };
+    const addMarker = (editor, element, lineNumber, column) => {
+        const id = editor.id;
+        const top = getLineTop(editor, lineNumber);
+        if (top === null) {
+            return;
+        }
+        if (!layers[id]) {
+            const layer = document.createElement('div');
+            layer.classList.add('jumpy-layer');
+            const editorEl = atom.views.getView(editor);
+            const lines = editorEl.querySelector('.lines');
+            assert(lines.parentElement.style.transform);
+            // const offsetTop = lines.getBoundingClientRect().top
+            //   - lines.parentNode.getBoundingClientRect().top
+            const offsetTop = lines.parentElement.getBoundingClientRect().top;
+            const charWidth = editorEl.getBaseCharacterWidth();
+            layers[id] = { layer, lines, offsetTop, charWidth };
+        }
+        const { layer, offsetTop, charWidth } = layers[id];
+        element.style.top = `${top - offsetTop}px`;
+        // element.style.left = `${editor.defaultCharWidth * column}px`
+        element.style.left = `${charWidth * column}px`;
+        layer.appendChild(element);
+    };
+    return { layers, addMarker };
+};
 class JumpyView {
     constructor(serializedState) {
         this.workspaceElement = atom.views.getView(atom.workspace);
@@ -34,7 +77,8 @@ class JumpyView {
                 { name: 'exit', from: 'on', to: 'off' }
             ],
             callbacks: {
-                onactivate: (event, from, to) => {
+                // onactivate: (event: any, from: string, to: string) => {
+                onactivate: () => {
                     this.keydownListener = (event) => {
                         // use the code property for testing if
                         // the key is relevant to Jumpy
@@ -76,53 +120,22 @@ class JumpyView {
                         ...wordLabels,
                         ...tabLabels
                     ];
+                    // render tab labels
                     for (const label of tabLabels) {
                         this.drawnLabels.push(label);
                         label.drawLabel();
                     }
-                    const cache = {};
-                    const getLineTop = (editor, lineNumber) => {
-                        const id = editor.id;
-                        if (!cache[id]) {
-                            cache[id] = {};
-                        }
-                        if (cache[id][lineNumber] === undefined) {
-                            const lineEl = editor.element.querySelector(`.line[data-screen-row="${lineNumber}"]`);
-                            cache[id][lineNumber] = lineEl
-                                ? lineEl.getBoundingClientRect().top
-                                : null;
-                        }
-                        return cache[id][lineNumber];
-                    };
-                    const layers = {};
-                    const addMarker = (editor, element, lineNumber, column) => {
-                        const id = editor.id;
-                        const top = getLineTop(editor, lineNumber);
-                        if (top === null) {
-                            return;
-                        }
-                        if (!layers[id]) {
-                            const layer = document.createElement('div');
-                            layer.classList.add('jumpy-layer');
-                            const lines = editor.element.querySelector('.lines');
-                            assert(lines.parentNode.style.transform);
-                            // const offsetTop = lines.getBoundingClientRect().top
-                            //   - lines.parentNode.getBoundingClientRect().top
-                            const offsetTop = lines.parentNode.getBoundingClientRect().top;
-                            layers[id] = { layer, lines, offsetTop };
-                        }
-                        const { layer, offsetTop } = layers[id];
-                        element.style.top = `${top - offsetTop}px`;
-                        element.style.left = `${editor.defaultCharWidth * column}px`;
-                        layer.appendChild(element);
-                    };
+                    // render word labels
+                    const { addMarker, layers } = createMarkerManager();
                     for (const label of wordLabels) {
                         this.drawnLabels.push(label);
                         label.drawLabel(addMarker);
                     }
+                    // apply changes all at once to DOM
                     for (const { layer, lines } of Object.values(layers)) {
                         lines.parentNode.appendChild(layer);
                     }
+                    // self contained cleaning function
                     this.destroyLabels = () => {
                         for (const { layer } of Object.values(layers)) {
                             layer.remove();

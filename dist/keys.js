@@ -1,5 +1,5 @@
-"use strict";
 'use babel';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 function getKeySet(customKeys) {

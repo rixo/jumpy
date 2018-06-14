@@ -121,6 +121,7 @@ class WordLabel implements Label {
             currentEditor.getSelectedText() !== '');
         const position = Point(this.lineNumber, this.column);
         if (isVisualMode || isSelected) {
+            position.column++ // we want to select the target char too
             currentEditor.selectToScreenPosition(position);
         } else {
             currentEditor.setCursorScreenPosition(position);

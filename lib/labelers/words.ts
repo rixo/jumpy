@@ -23,7 +23,39 @@ function isVisible(element) {
     return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
 
-const isMaj = k => /[A-Z]/.test(k)
+// const isMajRe = /[A-Z]/
+const majStart = 'A'.charCodeAt(0)
+const majEnd = 'Z'.charCodeAt(0)
+const isMaj = k => {
+  const charCode = k.charCodeAt(0)
+  return charCode >= majStart && charCode <= majEnd
+}
+
+const createLabelElement = (
+  textEditor: TextEditor,
+  column: number,
+  keyLabel: string,
+  settings: any,
+) => {
+  const labelElement = document.createElement('div');
+  labelElement.style.fontSize = settings.fontSize;
+  labelElement.classList.add('jumpy-label'); // For styling and tests
+  if (settings.highContrast) {
+     labelElement.classList.add('high-contrast');
+  }
+  for (const k of keyLabel) {
+    const span = document.createElement('span')
+    span.textContent = k
+    span.classList.add('jumpy-key')
+    span.style.width = `${Math.max(5, textEditor.defaultCharWidth - 1)}px`
+    if (isMaj(k)) {
+      span.classList.add('uppercase')
+    }
+    labelElement.appendChild(span)
+  }
+  labelElement.style.left = `${textEditor.defaultCharWidth * column}px`
+  return labelElement
+}
 
 class WordLabel implements Label {
     // TODO: check I need these defined again?
@@ -38,35 +70,15 @@ class WordLabel implements Label {
     marker: any;
 
     destroy() {
-        this.marker.destroy();
+        // this.marker.destroy();
     }
 
-    drawLabel(): Label {
+    drawLabel(addMarker): Label {
         const { textEditor, lineNumber, column, keyLabel } = this;
-
-        this.marker = textEditor.markScreenRange(new Range(
-            new Point(lineNumber, column),
-            new Point(lineNumber, column)),
-            { invalidate: 'touch'});
-
-        const labelElement = document.createElement('div');
-        // labelElement.textContent = keyLabel;
-        labelElement.innerHTML = keyLabel.split('')
-          .map(k => `<span class="rx-jumpy-key${isMaj(k) ? ' uppercase' : ''}">${k}</span>`)
-          .join('')
-        labelElement.style.fontSize = this.settings.fontSize;
-        labelElement.classList.add('jumpy-label'); // For styling and tests
-
-        if (this.settings.highContrast) {
-           labelElement.classList.add('high-contrast');
-        }
-
-        const decoration = textEditor.decorateMarker(this.marker,
-            {
-                type: 'overlay',
-                item: labelElement,
-                position: 'head'
-            });
+        const labelElement = createLabelElement(
+          textEditor, column, keyLabel, this.settings
+        )
+        addMarker(textEditor, labelElement, lineNumber, column)
         this.element = labelElement;
         return this;
     }

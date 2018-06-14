@@ -4,7 +4,7 @@
 // TODO: Merge in @willdady's code for better accuracy.
 
 /* global atom */
-import { CompositeDisposable, Point } from 'atom';
+import { CompositeDisposable, TextEditor, Point } from 'atom';
 import * as _ from 'lodash';
 
 import { LabelEnvironment, Label } from './label-interface';
@@ -14,6 +14,10 @@ import * as StateMachine from 'javascript-state-machine';
 import labelReducer from './label-reducer';
 import { getKeySet } from './keys';
 import { addJumpModeClasses, removeJumpModeClasses } from './viewHelpers';
+
+const assert = value => {
+  if (!value) throw new Error('Failed assertion')
+}
 
 export default class JumpyView {
     workspaceElement: any;
@@ -37,6 +41,9 @@ export default class JumpyView {
         this.drawnLabels = [];
         this.commands = new CompositeDisposable();
 
+        // "setup" theme
+        document.body.classList.add('jumpy-theme-vimium')
+
         this.fsm = StateMachine.create({
             initial: 'off',
             events: [
@@ -48,7 +55,6 @@ export default class JumpyView {
             ],
             callbacks: {
                 onactivate: (event: any, from: string, to: string ) => {
-                    console.time('onactivate')
                     this.keydownListener = (event: any) => {
                         // use the code property for testing if
                         // the key is relevant to Jumpy
@@ -88,27 +94,83 @@ export default class JumpyView {
                         settings: this.settings
                     };
 
-                    console.time('getWordLabels')
                     // TODO: reduce with concat all labelers -> labeler.getLabels()
                     const wordLabels:Array<Label> = getWordLabels(environment);
                     const tabLabels:Array<Label> = getTabLabels(environment);
 
                     // TODO: I really think alllabels can just be drawnlabels
-                    // maybe I call labeler.draw() still returns back anyway? Less functional?
+                    // maybe I call labeler.draw() still returns back anyway?
+                    // Less functional?
                     this.allLabels = [
                         ...wordLabels,
                         ...tabLabels
                     ];
-                    console.timeEnd('getWordLabels')
 
-                    console.time('draw labels')
-                    for (const label of this.allLabels) {
-                        this.drawnLabels.push(label.drawLabel());
+                    for (const label of tabLabels) {
+                      this.drawnLabels.push(label)
+                      label.drawLabel()
                     }
-                    console.timeEnd('draw labels')
+                    const cache = {}
+                    const getLineTop = (editor, lineNumber) => {
+                      const id = editor.id
+                      if (!cache[id]) {
+                        cache[id] = {}
+                      }
+                      if (cache[id][lineNumber] === undefined) {
+                        const lineEl = editor.element.querySelector(
+                          `.line[data-screen-row="${lineNumber}"]`
+                        )
+                        cache[id][lineNumber] = lineEl
+                          ? lineEl.getBoundingClientRect().top
+                          : null
+                      }
+                      return cache[id][lineNumber]
+                    }
+                    const layers = {}
+                    const addMarker = (
+                      editor: TextEditor,
+                      element: HTMLElement,
+                      lineNumber: number,
+                      column: number,
+                    ) => {
+                      const id = editor.id
+                      const top = getLineTop(editor, lineNumber)
+                      if (top === null) {
+                        return
+                      }
+                      if (!layers[id]) {
+                        const layer = document.createElement('div')
+                        layer.classList.add('jumpy-layer')
+                        const lines = editor.element.querySelector('.lines')
+                        assert(lines.parentNode.style.transform)
+                        // const offsetTop = lines.getBoundingClientRect().top
+                        //   - lines.parentNode.getBoundingClientRect().top
+                        const offsetTop = lines.parentNode.getBoundingClientRect().top
+                        layers[id] = {layer, lines, offsetTop}
+                      }
+                      const {layer, offsetTop} = layers[id]
+                      element.style.top = `${top - offsetTop}px`
+                      element.style.left = `${editor.defaultCharWidth * column}px`
+                      layer.appendChild(element)
+                    }
+                    for (const label of wordLabels) {
+                        this.drawnLabels.push(label)
+                        label.drawLabel(addMarker)
+                    }
+                    for (const {layer, lines} of Object.values(layers)) {
+                      lines.parentNode.appendChild(layer)
+                    }
+                    this.destroyLabels = () => {
+                      for (const {layer} of Object.values(layers)) {
+                        layer.remove()
+                      }
+                      for (const label of tabLabels) {
+                        label.destroy()
+                      }
+                      this.destroyLabels = null
+                    }
 
                     this.currentLabels = _.clone(this.allLabels);
-                    console.timeEnd('onactivate')
                 },
 
                 onkey: (event: any, from: string, to: string, character: string) => {
@@ -279,8 +341,8 @@ export default class JumpyView {
     // TODO: move into fsm? change callers too
     clearJumpMode() {
         const clearAllLabels = () => {
-            for (const label of this.drawnLabels) {
-                label.destroy();
+            if (this.destroyLabels) {
+              this.destroyLabels()
             }
             this.drawnLabels = []; // Very important for GC.
             // Verifiable in Dev Tools -> Timeline -> Nodes.

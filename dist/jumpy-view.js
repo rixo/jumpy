@@ -12,12 +12,18 @@ const StateMachine = require("javascript-state-machine");
 const label_reducer_1 = require("./label-reducer");
 const keys_1 = require("./keys");
 const viewHelpers_1 = require("./viewHelpers");
+const assert = value => {
+    if (!value)
+        throw new Error('Failed assertion');
+};
 class JumpyView {
     constructor(serializedState) {
         this.workspaceElement = atom.views.getView(atom.workspace);
         this.disposables = new atom_1.CompositeDisposable();
         this.drawnLabels = [];
         this.commands = new atom_1.CompositeDisposable();
+        // "setup" theme
+        document.body.classList.add('jumpy-theme-vimium');
         this.fsm = StateMachine.create({
             initial: 'off',
             events: [
@@ -29,7 +35,6 @@ class JumpyView {
             ],
             callbacks: {
                 onactivate: (event, from, to) => {
-                    console.time('onactivate');
                     this.keydownListener = (event) => {
                         // use the code property for testing if
                         // the key is relevant to Jumpy
@@ -61,24 +66,73 @@ class JumpyView {
                         keys: keys_1.getKeySet(atom.config.get('jumpy.customKeys')),
                         settings: this.settings
                     };
-                    console.time('getWordLabels');
                     // TODO: reduce with concat all labelers -> labeler.getLabels()
                     const wordLabels = words_1.default(environment);
                     const tabLabels = tabs_1.default(environment);
                     // TODO: I really think alllabels can just be drawnlabels
-                    // maybe I call labeler.draw() still returns back anyway? Less functional?
+                    // maybe I call labeler.draw() still returns back anyway?
+                    // Less functional?
                     this.allLabels = [
                         ...wordLabels,
                         ...tabLabels
                     ];
-                    console.timeEnd('getWordLabels');
-                    console.time('draw labels');
-                    for (const label of this.allLabels) {
-                        this.drawnLabels.push(label.drawLabel());
+                    for (const label of tabLabels) {
+                        this.drawnLabels.push(label);
+                        label.drawLabel();
                     }
-                    console.timeEnd('draw labels');
+                    const cache = {};
+                    const getLineTop = (editor, lineNumber) => {
+                        const id = editor.id;
+                        if (!cache[id]) {
+                            cache[id] = {};
+                        }
+                        if (cache[id][lineNumber] === undefined) {
+                            const lineEl = editor.element.querySelector(`.line[data-screen-row="${lineNumber}"]`);
+                            cache[id][lineNumber] = lineEl
+                                ? lineEl.getBoundingClientRect().top
+                                : null;
+                        }
+                        return cache[id][lineNumber];
+                    };
+                    const layers = {};
+                    const addMarker = (editor, element, lineNumber, column) => {
+                        const id = editor.id;
+                        const top = getLineTop(editor, lineNumber);
+                        if (top === null) {
+                            return;
+                        }
+                        if (!layers[id]) {
+                            const layer = document.createElement('div');
+                            layer.classList.add('jumpy-layer');
+                            const lines = editor.element.querySelector('.lines');
+                            assert(lines.parentNode.style.transform);
+                            // const offsetTop = lines.getBoundingClientRect().top
+                            //   - lines.parentNode.getBoundingClientRect().top
+                            const offsetTop = lines.parentNode.getBoundingClientRect().top;
+                            layers[id] = { layer, lines, offsetTop };
+                        }
+                        const { layer, offsetTop } = layers[id];
+                        element.style.top = `${top - offsetTop}px`;
+                        element.style.left = `${editor.defaultCharWidth * column}px`;
+                        layer.appendChild(element);
+                    };
+                    for (const label of wordLabels) {
+                        this.drawnLabels.push(label);
+                        label.drawLabel(addMarker);
+                    }
+                    for (const { layer, lines } of Object.values(layers)) {
+                        lines.parentNode.appendChild(layer);
+                    }
+                    this.destroyLabels = () => {
+                        for (const { layer } of Object.values(layers)) {
+                            layer.remove();
+                        }
+                        for (const label of tabLabels) {
+                            label.destroy();
+                        }
+                        this.destroyLabels = null;
+                    };
                     this.currentLabels = _.clone(this.allLabels);
-                    console.timeEnd('onactivate');
                 },
                 onkey: (event, from, to, character) => {
                     // TODO: instead... of the following, maybe do with
@@ -230,8 +284,8 @@ class JumpyView {
     // TODO: move into fsm? change callers too
     clearJumpMode() {
         const clearAllLabels = () => {
-            for (const label of this.drawnLabels) {
-                label.destroy();
+            if (this.destroyLabels) {
+                this.destroyLabels();
             }
             this.drawnLabels = []; // Very important for GC.
             // Verifiable in Dev Tools -> Timeline -> Nodes.

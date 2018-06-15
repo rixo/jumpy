@@ -1,9 +1,3 @@
-// .jumpy-label {
-//   position: fixed;
-//   margin-top: 9px;
-//   padding: .5px;
-//   // margin-left: -1px;
-// }
 .jumpy-layer {
   position: absolute;
   top: 0;
@@ -14,6 +8,8 @@
 .jumpy-theme-vimium {
   .jumpy-label,
   .jumpy-label.tab-label {
+    z-index: 1; // above settings-view icon
+    z-index: 2; // above tree-view
     text-transform: uppercase;
     // still, make uppercase visible
     .jumpy-key.uppercase {

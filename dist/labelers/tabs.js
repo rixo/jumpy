@@ -2,13 +2,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const atom_1 = require("atom");
-const SettingsView = window.require('settings-view/lib/settings-view');
+let SettingsView;
+try {
+    SettingsView = window.require('settings-view/lib/settings-view');
+}
+catch (err) {
+    // disable settings view support (maybe some warning?)
+}
 class TabLabel {
     destroy() {
         if (this.element) {
             this.element.remove();
         }
     }
+    // TODO:rixo use addMarker
     drawLabel() {
         const tabsPane = atom.workspace.paneForItem(this.paneItem);
         const tabsPaneElement = atom.views.getView(tabsPane);
@@ -32,12 +39,12 @@ class TabLabel {
         foundTab.appendChild(labelElement);
         return this;
     }
+    // /!\ TODO this is UNMAINTAINED for now
     animateBeacon() {
         // TODO: abstract function to find tab!
         const tabsPane = atom.workspace.paneForItem(this.paneItem);
         const tabsPaneElement = atom.views.getView(tabsPane);
         const foundTab = tabsPaneElement
-            // .querySelector(`[data-path='${this.textEditor.getPath()}'`);
             .querySelector(this.selector);
         if (foundTab) {
             const beacon = document.createElement('span');
@@ -60,28 +67,30 @@ class TabLabel {
         }
     }
 }
+const getPaneItemSelector = paneItem => {
+    if (paneItem instanceof SettingsView) {
+        return '[data-type="SettingsView"]';
+    }
+    else if (paneItem instanceof atom_1.TextEditor) {
+        return `[data-path="${paneItem.getPath()}"]`;
+    }
+    else {
+        return null;
+    }
+};
 const labeler = function (env) {
     const labels = [];
     for (const paneItem of atom.workspace.getPaneItems()) {
-        // if (!(paneItem instanceof TextEditor) || !paneItem.buffer) {
-        //     continue;
-        // }
         const keyLabel = env.keys.shift();
-        const label = new TabLabel();
-        if (paneItem instanceof SettingsView) {
-            label.selector = '[data-type="SettingsView"]';
-            // } else if (paneItem instanceof TextEditor && !!paneItem.buffer) {
-        }
-        else if (paneItem instanceof atom_1.TextEditor) {
-            label.selector = `[data-path="${paneItem.getPath()}"]`;
-        }
-        else {
+        const selector = getPaneItemSelector(paneItem);
+        if (selector === null) {
             continue;
         }
+        const label = new TabLabel();
+        label.selector = getPaneItemSelector(paneItem);
         label.paneItem = paneItem;
         label.settings = env.settings;
         label.keyLabel = keyLabel;
-        // label.textEditor = textEditor;
         labels.push(label);
     }
     return labels;

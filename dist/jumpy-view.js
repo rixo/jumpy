@@ -8,6 +8,8 @@ const atom_1 = require("atom");
 const _ = require("lodash");
 const words_1 = require("./labelers/words");
 const tabs_1 = require("./labelers/tabs");
+const settings_1 = require("./labelers/settings");
+const tree_view_1 = require("./labelers/tree-view");
 const StateMachine = require("javascript-state-machine");
 const label_reducer_1 = require("./label-reducer");
 const keys_1 = require("./keys");
@@ -33,7 +35,42 @@ const createMarkerManager = () => {
         }
         return cache[id][lineNumber];
     };
+    // TODO:rixo refactor addEditorMarker to use addMarker
     const addMarker = (editor, element, lineNumber, column) => {
+        if (editor) {
+            addEditorMarker(editor, element, lineNumber, column);
+        }
+        else if (typeof lineNumber === 'object') {
+            appendMarker(element, lineNumber);
+        }
+        else {
+            appendMarker(element, column, lineNumber);
+        }
+    };
+    const _ABSOLUTE_LAYER_ = Symbol('_ABSOLUTE_LAYER_');
+    const appendMarker = (element, x, y) => {
+        const id = _ABSOLUTE_LAYER_;
+        if (!layers[id]) {
+            const layer = document.createElement('div');
+            layer.classList.add('jumpy-layer');
+            layer.classList.add('jumpy-layer-absolute');
+            const container = document.body;
+            layers[id] = { layer, container };
+        }
+        const { layer } = layers[id];
+        if (typeof x === 'object') {
+            Object.assign(element.style, x);
+            // Object.entries(x).forEach(([prop, value]) => {
+            //   element.style[prop]
+            // })
+        }
+        else {
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+        }
+        layer.appendChild(element);
+    };
+    const addEditorMarker = (editor, element, lineNumber, column) => {
         const id = editor.id;
         const top = getLineTop(editor, lineNumber);
         if (top === null) {
@@ -45,19 +82,20 @@ const createMarkerManager = () => {
             const editorEl = atom.views.getView(editor);
             const lines = editorEl.querySelector('.lines');
             assert(lines.parentElement.style.transform);
-            // const offsetTop = lines.getBoundingClientRect().top
-            //   - lines.parentNode.getBoundingClientRect().top
             const offsetTop = lines.parentElement.getBoundingClientRect().top;
             const charWidth = editorEl.getBaseCharacterWidth();
-            layers[id] = { layer, lines, offsetTop, charWidth };
+            layers[id] = { layer, container: lines, offsetTop, charWidth };
         }
         const { layer, offsetTop, charWidth } = layers[id];
         element.style.top = `${top - offsetTop}px`;
-        // element.style.left = `${editor.defaultCharWidth * column}px`
         element.style.left = `${charWidth * column}px`;
         layer.appendChild(element);
     };
-    return { layers, addMarker };
+    const getLayers = () => [...Object.values(layers), layers[_ABSOLUTE_LAYER_]];
+    return {
+        getLayers,
+        addMarker,
+    };
 };
 class JumpyView {
     constructor(serializedState) {
@@ -104,44 +142,54 @@ class JumpyView {
                     for (const e of ['blur', 'click', 'scroll']) {
                         this.workspaceElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
                     }
+                    const environment = {
+                        keys: keys_1.getKeySet(atom.config.get('jumpy.customKeys')),
+                        settings: this.settings,
+                    };
+                    // TODO:rixo move that responsibility in tree-view related module
                     const treeView = document.getElementsByClassName('tree-view');
                     if (treeView.length) {
                         viewHelpers_1.addJumpModeClasses(treeView[0]);
                     }
-                    const environment = {
-                        keys: keys_1.getKeySet(atom.config.get('jumpy.customKeys')),
-                        settings: this.settings
-                    };
                     // TODO: reduce with concat all labelers -> labeler.getLabels()
                     const wordLabels = words_1.default(environment);
                     const tabLabels = tabs_1.default(environment);
-                    // const settingsLabels:Array<Label> = getSettingsLabels(environment);
-                    // const treeViewLabels:Array<Label> = getTreeViewLabels(environment);
+                    const settingsLabels = settings_1.default(environment);
+                    const treeViewLabels = tree_view_1.default(environment);
                     // TODO: I really think alllabels can just be drawnlabels
                     // maybe I call labeler.draw() still returns back anyway?
                     // Less functional?
                     this.allLabels = [
                         ...wordLabels,
-                        ...tabLabels
+                        ...settingsLabels,
+                        ...treeViewLabels,
+                        ...tabLabels,
                     ];
-                    // render tab labels
-                    for (const label of tabLabels) {
-                        this.drawnLabels.push(label);
-                        label.drawLabel();
-                    }
-                    // render word labels
-                    const { addMarker, layers } = createMarkerManager();
-                    for (const label of wordLabels) {
-                        this.drawnLabels.push(label);
-                        label.drawLabel(addMarker);
-                    }
+                    // render
+                    const { addMarker, getLayers } = createMarkerManager();
+                    const isTruthy = x => !!x;
+                    const drawLabel = addMarker => label => label.drawLabel(addMarker);
+                    const newlyDrawnLabels = this.allLabels
+                        .map(drawLabel(addMarker))
+                        .filter(isTruthy);
+                    // // render tab labels
+                    // for (const label of tabLabels) {
+                    //   this.drawnLabels.push(label)
+                    //   label.drawLabel()
+                    // }
+                    // // render word labels
+                    // for (const label of wordLabels) {
+                    //   this.drawnLabels.push(label)
+                    //   label.drawLabel(addMarker)
+                    // }
+                    this.drawnLabels = [...this.drawnLabels, ...newlyDrawnLabels];
                     // apply changes all at once to DOM
-                    for (const { layer, lines } of Object.values(layers)) {
-                        lines.parentNode.appendChild(layer);
+                    for (const { layer, container } of getLayers()) {
+                        container.appendChild(layer);
                     }
                     // self contained cleaning function
                     this.destroyLabels = () => {
-                        for (const { layer } of Object.values(layers)) {
+                        for (const { layer } of getLayers()) {
                             layer.remove();
                         }
                         for (const label of tabLabels) {
@@ -289,7 +337,17 @@ class JumpyView {
         this.settings = {
             fontSize: fontSizeString,
             highContrast: atom.config.get('jumpy.highContrast'),
-            wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g')
+            wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g'),
+            treeViewAutoSelect: true,
+            settingsTargetSelectors: [
+                'a',
+                'button',
+                'input:not([tabIndex = "-1"])',
+                'select',
+                'atom-text-editor',
+                '.package-card',
+                '.sub-section-heading.has-items$right',
+            ],
         };
     }
     // TODO cancel

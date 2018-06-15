@@ -35,7 +35,7 @@ type addMarker = (
 ) => void
 
 interface MarkerManager {
-  layers: {[id: string]: MarkerLayer}
+  layers: { [id: string]: MarkerLayer }
   addMarker: addMarker
 }
 
@@ -79,355 +79,358 @@ const createMarkerManager = (): MarkerManager => {
       //   - lines.parentNode.getBoundingClientRect().top
       const offsetTop = lines.parentElement.getBoundingClientRect().top
       const charWidth = editorEl.getBaseCharacterWidth()
-      layers[id] = {layer, lines, offsetTop, charWidth}
+      layers[id] = { layer, lines, offsetTop, charWidth }
     }
-    const {layer, offsetTop, charWidth} = layers[id]
+    const { layer, offsetTop, charWidth } = layers[id]
     element.style.top = `${top - offsetTop}px`
     // element.style.left = `${editor.defaultCharWidth * column}px`
     element.style.left = `${charWidth * column}px`
     layer.appendChild(element)
   }
-  return {layers, addMarker}
+  return { layers, addMarker }
 }
 
 export default class JumpyView {
-    workspaceElement: any;
-    disposables: CompositeDisposable;
-    commands: CompositeDisposable;
-    fsm: any;
-    currentKeys: string;
-    allLabels: Array<Label>; // TODO: these lists of labels seem a little much.
-    currentLabels: Array<Label>;
-    drawnLabels: Array<Label>;
-    keydownListener: any;
-    settings: any;
-    statusBar: any;
-    statusBarJumpy: HTMLElement | null;
-    statusBarJumpyStatus: HTMLElement | null;
-    savedInheritedDisplay: any;
-    destroyLabels: Function | null;
+  workspaceElement: any;
+  disposables: CompositeDisposable;
+  commands: CompositeDisposable;
+  fsm: any;
+  currentKeys: string;
+  allLabels: Array<Label>; // TODO: these lists of labels seem a little much.
+  currentLabels: Array<Label>;
+  drawnLabels: Array<Label>;
+  keydownListener: any;
+  settings: any;
+  statusBar: any;
+  statusBarJumpy: HTMLElement | null;
+  statusBarJumpyStatus: HTMLElement | null;
+  savedInheritedDisplay: any;
+  destroyLabels: Function | null;
 
-    constructor(serializedState: any) {
-        this.workspaceElement = atom.views.getView(atom.workspace);
-        this.disposables = new CompositeDisposable();
-        this.drawnLabels = [];
-        this.commands = new CompositeDisposable();
+  constructor(serializedState: any) {
+    this.workspaceElement = atom.views.getView(atom.workspace);
+    this.disposables = new CompositeDisposable();
+    this.drawnLabels = [];
+    this.commands = new CompositeDisposable();
 
-        // "setup" theme
-        document.body.classList.add('jumpy-theme-vimium')
+    // "setup" theme
+    document.body.classList.add('jumpy-theme-vimium')
 
-        let jumpCallback
+    let jumpCallback
 
-        this.fsm = StateMachine.create({
-            initial: 'off',
-            events: [
-                { name: 'activate', from: 'off', to: 'on' },
-                { name: 'key', from: 'on', to: 'on' },
-                { name: 'reset', from: 'on', to: 'on' },
-                { name: 'jump', from: 'on', to: 'off' },
-                { name: 'exit', from: 'on', to: 'off'  }
-            ],
-            callbacks: {
-                // onactivate: (event: any, from: string, to: string) => {
-                onactivate: (event, from, to, callback) => {
-                    jumpCallback = callback
+    this.fsm = StateMachine.create({
+      initial: 'off',
+      events: [
+        { name: 'activate', from: 'off', to: 'on' },
+        { name: 'key', from: 'on', to: 'on' },
+        { name: 'reset', from: 'on', to: 'on' },
+        { name: 'jump', from: 'on', to: 'off' },
+        { name: 'exit', from: 'on', to: 'off' }
+      ],
+      callbacks: {
+        // onactivate: (event: any, from: string, to: string) => {
+        onactivate: (event, from, to, callback) => {
+          jumpCallback = callback
 
-                    this.keydownListener = (event: any) => {
-                        // use the code property for testing if
-                        // the key is relevant to Jumpy
-                        // that is, that it's an alpha char.
-                        // use the key character to pass the exact key
-                        // that is, (upper or lower) to the state machine.
-                        // if jumpy catches it...stop the event propagation.
-                        const {code, key, metaKey, ctrlKey, altKey} = event;
-                        if (metaKey || ctrlKey || altKey) {
-                            return;
-                        }
-
-                        if (/^Key[A-Z]{1}$/.test(code)) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            this.fsm.key(key);
-                        }
-                    };
-
-                    this.setSettings();
-
-                    this.currentKeys = '';
-
-                    this.workspaceElement.addEventListener('keydown', this.keydownListener, true);
-                    for (const e of ['blur', 'click', 'scroll']) {
-                        this.workspaceElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
-                    }
-
-                    const treeView:HTMLCollectionOf<HTMLElement> =
-                      <HTMLCollectionOf<HTMLElement>> document.getElementsByClassName('tree-view');
-                    if (treeView.length) {
-                        addJumpModeClasses(treeView[0]);
-                    }
-
-                    const environment:LabelEnvironment = {
-                        keys: getKeySet(atom.config.get('jumpy.customKeys')),
-                        settings: this.settings
-                    };
-
-                    // TODO: reduce with concat all labelers -> labeler.getLabels()
-                    const wordLabels:Array<Label> = getWordLabels(environment);
-                    const tabLabels:Array<Label> = getTabLabels(environment);
-                    // const settingsLabels:Array<Label> = getSettingsLabels(environment);
-                    // const treeViewLabels:Array<Label> = getTreeViewLabels(environment);
-
-                    // TODO: I really think alllabels can just be drawnlabels
-                    // maybe I call labeler.draw() still returns back anyway?
-                    // Less functional?
-                    this.allLabels = [
-                        ...wordLabels,
-                        ...tabLabels
-                    ];
-
-                    // render tab labels
-                    for (const label of tabLabels) {
-                      this.drawnLabels.push(label)
-                      label.drawLabel()
-                    }
-                    // render word labels
-                    const {addMarker, layers} = createMarkerManager()
-                    for (const label of wordLabels) {
-                      this.drawnLabels.push(label)
-                      label.drawLabel(addMarker)
-                    }
-
-                    // apply changes all at once to DOM
-                    for (const {layer, lines} of Object.values(layers)) {
-                      lines.parentNode.appendChild(layer)
-                    }
-
-                    // self contained cleaning function
-                    this.destroyLabels = () => {
-                      for (const {layer} of Object.values(layers)) {
-                        layer.remove()
-                      }
-                      for (const label of tabLabels) {
-                        label.destroy()
-                      }
-                      this.destroyLabels = null
-                    }
-
-                    this.currentLabels = _.clone(this.allLabels);
-                },
-
-                onkey: (event: any, from: string, to: string, character: string) => {
-                    // TODO: instead... of the following, maybe do with
-                    // some substate ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
-                    const testKeys = this.currentKeys + character;
-                    const matched = this.currentLabels.some((label) => {
-                        if (!label.keyLabel) {
-                            return false;
-                        }
-                        return label.keyLabel.startsWith(testKeys);
-                    });
-
-                    if (!matched) {
-                        if (this.statusBarJumpy) {
-                            this.statusBarJumpy.classList.add('no-match');
-                        }
-                        this.setStatus('No Match!');
-                        return;
-                    }
-                    // ^ the above makes this func feel not single responsibility
-                    // some substate ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
-
-                    this.currentKeys = testKeys;
-
-                    for (const label of this.drawnLabels) {
-                        if (!label.keyLabel || !label.element) {
-                            continue;
-                        }
-                        if (label.keyLabel.startsWith(this.currentKeys)) {
-                          label.element.classList.add('hot')
-                        } else {
-                            label.element.classList.add('irrelevant');
-                        }
-                    }
-
-                    this.setStatus(character);
-
-                    this.currentLabels = labelReducer(this.currentLabels, this.currentKeys);
-
-                    if (this.currentLabels.length === 1 && this.currentKeys.length === 2) {
-                        if (this.fsm.can('jump')) {
-                            this.fsm.jump(this.currentLabels[0]);
-                        }
-                    }
-                },
-
-                onjump: (event: any, from: string, to: string, location: Label) => {
-                    if (jumpCallback) {
-                      const abort = jumpCallback(location)
-                      jumpCallback = null
-                      if (abort !== false) {
-                        location.jump()
-                      }
-                    } else {
-                      location.jump()
-                    }
-                },
-
-                onreset: (event: any, from: string, to: string) => {
-                    this.currentKeys = '';
-                    this.currentLabels = _.clone(this.allLabels);
-                    for (const label of this.currentLabels) {
-                        if (label.element) {
-                            label.element.classList.remove('irrelevant');
-                            label.element.classList.remove('hot');
-                        }
-                    }
-                },
-
-                // STATE CHANGES:
-                onoff: (event: any, from: string, to: string) => {
-                    if (from === 'on') {
-                        this.clearJumpMode();
-                    }
-                    if (this.statusBarJumpy) {
-                        this.statusBarJumpy.style.display = 'none';
-                    }
-                    this.setStatus(''); // Just for correctness really
-                },
-
-                onbeforeevent: (event: any, from: string, to: string) => {
-                    this.initializeStatusBar();
-
-                    // Reset statuses:
-                    this.setStatus('Jump Mode!');
-                    this.showStatus();
-                    if (this.statusBarJumpy) {
-                        this.statusBarJumpy.classList.remove('no-match');
-                    }
-                }
+          this.keydownListener = (event: any) => {
+            // use the code property for testing if
+            // the key is relevant to Jumpy
+            // that is, that it's an alpha char.
+            // use the key character to pass the exact key
+            // that is, (upper or lower) to the state machine.
+            // if jumpy catches it...stop the event propagation.
+            const { code, key, metaKey, ctrlKey, altKey } = event;
+            if (metaKey || ctrlKey || altKey) {
+              return;
             }
-        });
 
-        // TODO: do I need the () => or just =>
-        this.commands.add(atom.commands.add('atom-workspace', {
-            'jumpy:toggle': () => { this.toggle() },
-            'jumpy:reset': () => {
-                if (this.fsm.can('reset')) {
-                    this.fsm.reset();
-                }
-            },
-            'jumpy:clear': () => {
-                if(this.fsm.can('exit')) {
-                    this.fsm.exit();
-                }
+            if (/^Key[A-Z]{1}$/.test(code)) {
+              event.preventDefault();
+              event.stopPropagation();
+              this.fsm.key(key);
             }
-        }));
-    }
+          };
 
-    // This needs to be called when status bar is ready, so can't be called from constructor
-    initializeStatusBar() {
-        if (this.statusBar) {
-            return;
-        }
+          this.setSettings();
 
-        this.statusBar = <HTMLElement>document.querySelector('status-bar');
-        if (this.statusBar) {
-            const statusBarJumpyElement = document.createElement('div');
-            statusBarJumpyElement.id = 'status-bar-jumpy';
-            statusBarJumpyElement.classList.add('inline-block');
-            statusBarJumpyElement.innerHTML = 'Jumpy: <span class="status"></span>';
-            this.statusBar.addLeftTile({
-                item: statusBarJumpyElement,
-                priority: -1
-            });
-            this.statusBarJumpy = <HTMLElement>this.statusBar.querySelector('#status-bar-jumpy');
+          this.currentKeys = '';
+
+          this.workspaceElement.addEventListener('keydown', this.keydownListener, true);
+          for (const e of ['blur', 'click', 'scroll']) {
+            this.workspaceElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
+          }
+
+          let treeViewLabels: Array<Label> = []
+
+          const environment: LabelEnvironment = {
+            keys: getKeySet(atom.config.get('jumpy.customKeys')),
+            settings: this.settings
+          };
+
+          const treeView: HTMLCollectionOf<HTMLElement> =
+            <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tree-view');
+          if (treeView.length) {
+            addJumpModeClasses(treeView[0]);
+            treeViewLabels = getTreeViewLabels(environment);
+          }
+
+          // TODO: reduce with concat all labelers -> labeler.getLabels()
+          const wordLabels: Array<Label> = getWordLabels(environment);
+          const tabLabels: Array<Label> = getTabLabels(environment);
+          const settingsLabels: Array<Label> = getSettingsLabels(environment);
+
+          // TODO: I really think alllabels can just be drawnlabels
+          // maybe I call labeler.draw() still returns back anyway?
+          // Less functional?
+          this.allLabels = [
+            ...wordLabels,
+            ...tabLabels,
+            ...treeViewLabels,
+          ];
+
+          // render tab labels
+          for (const label of tabLabels) {
+            this.drawnLabels.push(label)
+            label.drawLabel()
+          }
+          // render word labels
+          const { addMarker, layers } = createMarkerManager()
+          for (const label of wordLabels) {
+            this.drawnLabels.push(label)
+            label.drawLabel(addMarker)
+          }
+
+          // apply changes all at once to DOM
+          for (const { layer, lines } of Object.values(layers)) {
+            lines.parentNode.appendChild(layer)
+          }
+
+          // self contained cleaning function
+          this.destroyLabels = () => {
+            for (const { layer } of Object.values(layers)) {
+              layer.remove()
+            }
+            for (const label of tabLabels) {
+              label.destroy()
+            }
+            this.destroyLabels = null
+          }
+
+          this.currentLabels = _.clone(this.allLabels);
+        },
+
+        onkey: (event: any, from: string, to: string, character: string) => {
+          // TODO: instead... of the following, maybe do with
+          // some substate ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+          const testKeys = this.currentKeys + character;
+          const matched = this.currentLabels.some((label) => {
+            if (!label.keyLabel) {
+              return false;
+            }
+            return label.keyLabel.startsWith(testKeys);
+          });
+
+          if (!matched) {
             if (this.statusBarJumpy) {
-                this.statusBarJumpyStatus = <HTMLElement>this.statusBarJumpy.querySelector('.status');
-                this.savedInheritedDisplay = this.statusBarJumpy.style.display;
+              this.statusBarJumpy.classList.add('no-match');
             }
-        }
-    }
+            this.setStatus('No Match!');
+            return;
+          }
+          // ^ the above makes this func feel not single responsibility
+          // some substate ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
 
-    showStatus() { // restore typical status bar display (inherited)
-        if (this.statusBarJumpy) {
-            this.statusBarJumpy.style.display = this.savedInheritedDisplay;
-        }
-    }
+          this.currentKeys = testKeys;
 
-    setStatus(status: string) {
-        if (this.statusBarJumpyStatus) {
-            this.statusBarJumpyStatus.innerHTML = status;
-        }
-    }
+          for (const label of this.drawnLabels) {
+            if (!label.keyLabel || !label.element) {
+              continue;
+            }
+            if (label.keyLabel.startsWith(this.currentKeys)) {
+              label.element.classList.add('hot')
+            } else {
+              label.element.classList.add('irrelevant');
+            }
+          }
 
-    setSettings() {
-        let fontSize:number = atom.config.get('jumpy.fontSize');
-        if (isNaN(fontSize) || fontSize > 1) {
-            fontSize = .75; // default
-        }
-        const fontSizeString:string = `${fontSize * 100}%`;
-        this.settings = {
-            fontSize: fontSizeString,
-            highContrast: <boolean>atom.config.get('jumpy.highContrast'),
-            wordsPattern: new RegExp (atom.config.get('jumpy.matchPattern'), 'g')
-        };
-    }
+          this.setStatus(character);
 
-    // TODO cancel
-    toggle(callback?: Function, onCancel?: Function) {
-        if (this.fsm.can('activate')) {
-            // console.time('activate')
-            this.fsm.activate(callback);
-            // console.timeEnd('activate')
-        } else if (this.fsm.can('exit')) {
-            this.fsm.exit();
-        }
-    }
+          this.currentLabels = labelReducer(this.currentLabels, this.currentKeys);
 
-    clearJumpModeHandler() {
+          if (this.currentLabels.length === 1 && this.currentKeys.length === 2) {
+            if (this.fsm.can('jump')) {
+              this.fsm.jump(this.currentLabels[0]);
+            }
+          }
+        },
+
+        onjump: (event: any, from: string, to: string, location: Label) => {
+          if (jumpCallback) {
+            const abort = jumpCallback(location)
+            jumpCallback = null
+            if (abort !== false) {
+              location.jump()
+            }
+          } else {
+            location.jump()
+          }
+        },
+
+        onreset: (event: any, from: string, to: string) => {
+          this.currentKeys = '';
+          this.currentLabels = _.clone(this.allLabels);
+          for (const label of this.currentLabels) {
+            if (label.element) {
+              label.element.classList.remove('irrelevant');
+              label.element.classList.remove('hot');
+            }
+          }
+        },
+
+        // STATE CHANGES:
+        onoff: (event: any, from: string, to: string) => {
+          if (from === 'on') {
+            this.clearJumpMode();
+          }
+          if (this.statusBarJumpy) {
+            this.statusBarJumpy.style.display = 'none';
+          }
+          this.setStatus(''); // Just for correctness really
+        },
+
+        onbeforeevent: (event: any, from: string, to: string) => {
+          this.initializeStatusBar();
+
+          // Reset statuses:
+          this.setStatus('Jump Mode!');
+          this.showStatus();
+          if (this.statusBarJumpy) {
+            this.statusBarJumpy.classList.remove('no-match');
+          }
+        }
+      }
+    });
+
+    // TODO: do I need the () => or just =>
+    this.commands.add(atom.commands.add('atom-workspace', {
+      'jumpy:toggle': () => { this.toggle() },
+      'jumpy:reset': () => {
+        if (this.fsm.can('reset')) {
+          this.fsm.reset();
+        }
+      },
+      'jumpy:clear': () => {
         if (this.fsm.can('exit')) {
-            this.fsm.exit();
+          this.fsm.exit();
         }
+      }
+    }));
+  }
+
+  // This needs to be called when status bar is ready, so can't be called from constructor
+  initializeStatusBar() {
+    if (this.statusBar) {
+      return;
     }
 
-    // TODO: move into fsm? change callers too
-    clearJumpMode() {
-        const clearAllLabels = () => {
-            if (this.destroyLabels) {
-              this.destroyLabels()
-            }
-            this.drawnLabels = []; // Very important for GC.
-            // Verifiable in Dev Tools -> Timeline -> Nodes.
-        };
-
-        this.allLabels = [];
-        this.workspaceElement.removeEventListener('keydown', this.keydownListener, true);
-        for (const e of ['blur', 'click', 'scroll']) {
-            this.workspaceElement.removeEventListener(e, () => this.clearJumpModeHandler(), true);
-        }
-        const treeView:HTMLCollectionOf<HTMLElement> =
-          <HTMLCollectionOf<HTMLElement>> document.getElementsByClassName('tree-view');
-        if (treeView.length) {
-            removeJumpModeClasses(treeView[0]);
-        }
-        for (const editor of atom.workspace.getTextEditors()) {
-            const editorView = atom.views.getView(editor);
-            removeJumpModeClasses(editorView);
-        }
-        clearAllLabels();
-        if (this.disposables) {
-            this.disposables.dispose();
-        }
+    this.statusBar = <HTMLElement>document.querySelector('status-bar');
+    if (this.statusBar) {
+      const statusBarJumpyElement = document.createElement('div');
+      statusBarJumpyElement.id = 'status-bar-jumpy';
+      statusBarJumpyElement.classList.add('inline-block');
+      statusBarJumpyElement.innerHTML = 'Jumpy: <span class="status"></span>';
+      this.statusBar.addLeftTile({
+        item: statusBarJumpyElement,
+        priority: -1
+      });
+      this.statusBarJumpy = <HTMLElement>this.statusBar.querySelector('#status-bar-jumpy');
+      if (this.statusBarJumpy) {
+        this.statusBarJumpyStatus = <HTMLElement>this.statusBarJumpy.querySelector('.status');
+        this.savedInheritedDisplay = this.statusBarJumpy.style.display;
+      }
     }
+  }
 
-    // Returns an object that can be retrieved when package is activated
-    serialize() {}
-
-    // Tear down any state and detach
-    destroy() {
-        if (this.commands) {
-            this.commands.dispose();
-        }
-        this.clearJumpMode();
+  showStatus() { // restore typical status bar display (inherited)
+    if (this.statusBarJumpy) {
+      this.statusBarJumpy.style.display = this.savedInheritedDisplay;
     }
+  }
+
+  setStatus(status: string) {
+    if (this.statusBarJumpyStatus) {
+      this.statusBarJumpyStatus.innerHTML = status;
+    }
+  }
+
+  setSettings() {
+    let fontSize: number = atom.config.get('jumpy.fontSize');
+    if (isNaN(fontSize) || fontSize > 1) {
+      fontSize = .75; // default
+    }
+    const fontSizeString: string = `${fontSize * 100}%`;
+    this.settings = {
+      fontSize: fontSizeString,
+      highContrast: <boolean>atom.config.get('jumpy.highContrast'),
+      wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g')
+    };
+  }
+
+  // TODO cancel
+  toggle(callback?: Function, onCancel?: Function) {
+    if (this.fsm.can('activate')) {
+      // console.time('activate')
+      this.fsm.activate(callback);
+      // console.timeEnd('activate')
+    } else if (this.fsm.can('exit')) {
+      this.fsm.exit();
+    }
+  }
+
+  clearJumpModeHandler() {
+    if (this.fsm.can('exit')) {
+      this.fsm.exit();
+    }
+  }
+
+  // TODO: move into fsm? change callers too
+  clearJumpMode() {
+    const clearAllLabels = () => {
+      if (this.destroyLabels) {
+        this.destroyLabels()
+      }
+      this.drawnLabels = []; // Very important for GC.
+      // Verifiable in Dev Tools -> Timeline -> Nodes.
+    };
+
+    this.allLabels = [];
+    this.workspaceElement.removeEventListener('keydown', this.keydownListener, true);
+    for (const e of ['blur', 'click', 'scroll']) {
+      this.workspaceElement.removeEventListener(e, () => this.clearJumpModeHandler(), true);
+    }
+    const treeView: HTMLCollectionOf<HTMLElement> =
+      <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tree-view');
+    if (treeView.length) {
+      removeJumpModeClasses(treeView[0]);
+    }
+    for (const editor of atom.workspace.getTextEditors()) {
+      const editorView = atom.views.getView(editor);
+      removeJumpModeClasses(editorView);
+    }
+    clearAllLabels();
+    if (this.disposables) {
+      this.disposables.dispose();
+    }
+  }
+
+  // Returns an object that can be retrieved when package is activated
+  serialize() { }
+
+  // Tear down any state and detach
+  destroy() {
+    if (this.commands) {
+      this.commands.dispose();
+    }
+    this.clearJumpMode();
+  }
 }

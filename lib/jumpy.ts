@@ -1,6 +1,6 @@
 'use babel';
 
-import JumpyView from './jumpy-view';
+// import JumpyView from './jumpy-view';
 
 module.exports = {
 
@@ -38,6 +38,8 @@ module.exports = {
     },
 
     activate(state: any) {
+        // lazy load implementation
+        const JumpyView = require('./jumpy-view').default;
         this.jumpyView = new JumpyView(state.jumpyViewState);
     },
 
@@ -57,5 +59,11 @@ module.exports = {
     consumeToolbar(toolbar) {
       // TODO use status bar API
       this.statusBar = toolbar
+    },
+
+    consumeVimModePlus(vim) {
+        // lazy load optional vim-mode-plus integation
+        const {setup} = require('./vim');
+        setup(this, vim);
     }
 };

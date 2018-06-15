@@ -28,6 +28,11 @@
       "versions": {
         "^1.0.0": "consumeToolbar"
       }
+    },
+    "vim-mode-plus": {
+      "versions": {
+        "0.1.0": "consumeVimModePlus"
+      }
     }
   },
   "dependencies": {

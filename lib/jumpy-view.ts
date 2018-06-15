@@ -10,6 +10,8 @@ import * as _ from 'lodash';
 import { LabelEnvironment, Label } from './label-interface';
 import getWordLabels from './labelers/words';
 import getTabLabels from './labelers/tabs';
+import getSettingsLabels from './labelers/settings'
+import getTreeViewLabels from './labelers/tree-view'
 import * as StateMachine from 'javascript-state-machine';
 import labelReducer from './label-reducer';
 import { getKeySet } from './keys';
@@ -114,6 +116,8 @@ export default class JumpyView {
         // "setup" theme
         document.body.classList.add('jumpy-theme-vimium')
 
+        let jumpCallback
+
         this.fsm = StateMachine.create({
             initial: 'off',
             events: [
@@ -125,7 +129,9 @@ export default class JumpyView {
             ],
             callbacks: {
                 // onactivate: (event: any, from: string, to: string) => {
-                onactivate: () => {
+                onactivate: (event, from, to, callback) => {
+                    jumpCallback = callback
+
                     this.keydownListener = (event: any) => {
                         // use the code property for testing if
                         // the key is relevant to Jumpy
@@ -168,6 +174,8 @@ export default class JumpyView {
                     // TODO: reduce with concat all labelers -> labeler.getLabels()
                     const wordLabels:Array<Label> = getWordLabels(environment);
                     const tabLabels:Array<Label> = getTabLabels(environment);
+                    // const settingsLabels:Array<Label> = getSettingsLabels(environment);
+                    // const treeViewLabels:Array<Label> = getTreeViewLabels(environment);
 
                     // TODO: I really think alllabels can just be drawnlabels
                     // maybe I call labeler.draw() still returns back anyway?
@@ -254,7 +262,15 @@ export default class JumpyView {
                 },
 
                 onjump: (event: any, from: string, to: string, location: Label) => {
-                    location.jump();
+                    if (jumpCallback) {
+                      const abort = jumpCallback(location)
+                      jumpCallback = null
+                      if (abort !== false) {
+                        location.jump()
+                      }
+                    } else {
+                      location.jump()
+                    }
                 },
 
                 onreset: (event: any, from: string, to: string) => {
@@ -357,11 +373,12 @@ export default class JumpyView {
         };
     }
 
-    toggle() {
+    // TODO cancel
+    toggle(callback?: Function, onCancel?: Function) {
         if (this.fsm.can('activate')) {
-            console.time('activate')
-            this.fsm.activate();
-            console.timeEnd('activate')
+            // console.time('activate')
+            this.fsm.activate(callback);
+            // console.timeEnd('activate')
         } else if (this.fsm.can('exit')) {
             this.fsm.exit();
         }

@@ -1,7 +1,5 @@
 'use babel';
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const jumpy_view_1 = require("./jumpy-view");
+// import JumpyView from './jumpy-view';
 module.exports = {
     jumpyView: null,
     config: {
@@ -36,7 +34,9 @@ module.exports = {
         }
     },
     activate(state) {
-        this.jumpyView = new jumpy_view_1.default(state.jumpyViewState);
+        // lazy load implementation
+        const JumpyView = require('./jumpy-view').default;
+        this.jumpyView = new JumpyView(state.jumpyViewState);
     },
     deactivate() {
         if (this.jumpyView) {
@@ -52,6 +52,11 @@ module.exports = {
     consumeToolbar(toolbar) {
         // TODO use status bar API
         this.statusBar = toolbar;
+    },
+    consumeVimModePlus(vim) {
+        // lazy load optional vim-mode-plus integation
+        const { setup } = require('./vim');
+        setup(this, vim);
     }
 };
 //# sourceMappingURL=jumpy.js.map

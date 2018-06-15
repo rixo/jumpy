@@ -67,6 +67,7 @@ class JumpyView {
         this.commands = new atom_1.CompositeDisposable();
         // "setup" theme
         document.body.classList.add('jumpy-theme-vimium');
+        let jumpCallback;
         this.fsm = StateMachine.create({
             initial: 'off',
             events: [
@@ -78,7 +79,8 @@ class JumpyView {
             ],
             callbacks: {
                 // onactivate: (event: any, from: string, to: string) => {
-                onactivate: () => {
+                onactivate: (event, from, to, callback) => {
+                    jumpCallback = callback;
                     this.keydownListener = (event) => {
                         // use the code property for testing if
                         // the key is relevant to Jumpy
@@ -113,6 +115,8 @@ class JumpyView {
                     // TODO: reduce with concat all labelers -> labeler.getLabels()
                     const wordLabels = words_1.default(environment);
                     const tabLabels = tabs_1.default(environment);
+                    // const settingsLabels:Array<Label> = getSettingsLabels(environment);
+                    // const treeViewLabels:Array<Label> = getTreeViewLabels(environment);
                     // TODO: I really think alllabels can just be drawnlabels
                     // maybe I call labeler.draw() still returns back anyway?
                     // Less functional?
@@ -187,7 +191,16 @@ class JumpyView {
                     }
                 },
                 onjump: (event, from, to, location) => {
-                    location.jump();
+                    if (jumpCallback) {
+                        const abort = jumpCallback(location);
+                        jumpCallback = null;
+                        if (abort !== false) {
+                            location.jump();
+                        }
+                    }
+                    else {
+                        location.jump();
+                    }
                 },
                 onreset: (event, from, to) => {
                     this.currentKeys = '';
@@ -279,11 +292,12 @@ class JumpyView {
             wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g')
         };
     }
-    toggle() {
+    // TODO cancel
+    toggle(callback, onCancel) {
         if (this.fsm.can('activate')) {
-            console.time('activate');
-            this.fsm.activate();
-            console.timeEnd('activate');
+            // console.time('activate')
+            this.fsm.activate(callback);
+            // console.timeEnd('activate')
         }
         else if (this.fsm.can('exit')) {
             this.fsm.exit();

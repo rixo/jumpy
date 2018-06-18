@@ -15,35 +15,16 @@ interface MarkerManager {
   destroy: () => void,
 }
 
-export default (): MarkerManager => {
-  // create maker layer element
-  const layer = document.createElement('div')
-  layer.classList.add('jumpy-layer')
-  layer.classList.add('jumpy-layer-absolute')
+type TextEditorLocator = (row: number, col: number) => ({
+  left: string,
+  top: string,
+})
 
-  const addMarker = (element, x, y?) => {
-    if (typeof x === 'object') {
-      Object.assign(element.style, x)
-    } else {
-      element.style.left = `${x}px`
-      element.style.top = `${y}px`
-    }
-    layer.appendChild(element)
-  }
-
-  const cache = {}
-  const getCoordsInEditor = (editor: TextEditor, row: number, col: number) => {
-    const id = editor.id
-    if (!cache[id]) {
-      const editorEl = atom.views.getView(editor)
-      const charWidth = editorEl.getBaseCharacterWidth()
-      cache[id] = {
-        linesTop: {},
-        lineRects: {},
-        charWidth,
-      }
-    }
-    const {charWidth, lineRects} = cache[id]
+const createTextEditorLocator = (editor: TextEditor): TextEditorLocator => {
+  const editorEl = atom.views.getView(editor)
+  const charWidth = editorEl.getBaseCharacterWidth()
+  const lineRects = []
+  return (row: number, col: number) => {
     if (lineRects[row] === undefined) {
       const editorEl = atom.views.getView(editor)
       const lineEl = editorEl.querySelector(
@@ -61,6 +42,34 @@ export default (): MarkerManager => {
       top: lineRects[row].top + 'px',
     }
   }
+}
+
+export default (): MarkerManager => {
+  // create maker layer element
+  const layer = document.createElement('div')
+  layer.classList.add('jumpy-layer')
+  layer.classList.add('jumpy-layer-absolute')
+
+  const addMarker = (element: HTMLElement, x: number | Object, y?: number) => {
+    if (typeof x === 'object') {
+      Object.assign(element.style, x)
+    } else {
+      element.style.left = `${x}px`
+      element.style.top = `${y}px`
+    }
+    layer.appendChild(element)
+  }
+
+  const locators = {}
+  const getCoordsInEditor = (editor: TextEditor, row: number, col: number) => {
+    const id = editor.id
+    let locator = locators[id]
+    if (!locator) {
+      locator = createTextEditorLocator(editor)
+      locator[id] = locator
+    }
+    return locator(row, col)
+  }
   const addEditorMarker = (
     editor: TextEditor,
     element: HTMLElement,
@@ -68,10 +77,9 @@ export default (): MarkerManager => {
     column: number,
   ) => {
     const coords = getCoordsInEditor(editor, lineNumber, column)
-    if (coords === null) {
-      return
+    if (coords !== null) {
+      addMarker(element, coords)
     }
-    addMarker(element, coords)
   }
 
   const render = () => {

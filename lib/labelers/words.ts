@@ -147,6 +147,14 @@ class WordLabel implements Label {
         const currentEditor = this.textEditor;
         const editorView = atom.views.getView(currentEditor);
 
+        // Interop with cursor-history
+        // cursor-history watches mouse events & dispatched commands.
+        // However, our actual command (jumpy:toggle) does not actually
+        // move the cursor; and cursor-history does not see the actual
+        // jump, that is neither a command nor a mouse event...So, we
+        // dispatch a bogus command just before moving cursor for interop.
+        atom.commands.dispatch(editorView, 'jumpy:jump')
+
         // TODO: pretty sure this can't be useful...anymore
         // I think it had somethign to do with the observers etc.
         // Prevent other editors from jumping cursors as well

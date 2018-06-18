@@ -19,7 +19,7 @@ class SettingsViewLabel implements Label {
   keyLabel: string
   // this.element is required for adding hot/irrelevant classes
   element: HTMLElement
-  settings: any
+  env: LabelEnvironment
   targetEl: HTMLElement
   attachEl: HTMLElement
   targetSelectorOptions: string
@@ -29,8 +29,16 @@ class SettingsViewLabel implements Label {
   // when the parent layer is removed
   destroy() {}
 
-  drawLabel(addMarker): Label {
-    const {keyLabel, settings, targetEl, targetSelectorOptions: selOpts} = this
+  drawLabel(): Label {
+    const {
+      keyLabel,
+      targetEl,
+      targetSelectorOptions: selOpts,
+      env: {
+        settings,
+        markers: {addMarker},
+      },
+    } = this
     this.element = createLabelElement(keyLabel, settings)
     const rect = targetEl.getBoundingClientRect()
     const pos: {top?, left?, bottom?, right?} = {}
@@ -49,7 +57,7 @@ class SettingsViewLabel implements Label {
       pos.top = rect.top + 'px'
       pos.left = rect.left + 'px'
     }
-    addMarker(null, this.element, pos)
+    addMarker(this.element, pos)
     return this
   }
 
@@ -100,7 +108,7 @@ const labeler: Labeler = $$$(() => {
     const createLabel = (env, paneItem, selectorOptions) => targetEl => {
       const label = new SettingsViewLabel()
       label.keyLabel = env.keys.shift()
-      label.settings = env.settings
+      label.env = env
       label.targetEl = targetEl
       label.targetSelectorOptions = selectorOptions
       label.settingsView = paneItem

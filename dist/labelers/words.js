@@ -26,7 +26,7 @@ const isMaj = k => {
     const charCode = k.charCodeAt(0);
     return charCode >= majStart && charCode <= majEnd;
 };
-const createLabelElement = (textEditor, column, keyLabel, settings) => {
+const createLabelElement = (textEditor, keyLabel, settings) => {
     const labelElement = document.createElement('div');
     labelElement.style.fontSize = settings.fontSize;
     labelElement.classList.add('jumpy-label'); // For styling and tests
@@ -37,13 +37,13 @@ const createLabelElement = (textEditor, column, keyLabel, settings) => {
         const span = document.createElement('span');
         span.textContent = k;
         span.classList.add('jumpy-key');
+        // TODO:rixo clean marker with
         span.style.width = `${Math.max(5, textEditor.defaultCharWidth - 1)}px`;
         if (isMaj(k)) {
             span.classList.add('uppercase');
         }
         labelElement.appendChild(span);
     }
-    labelElement.style.left = `${textEditor.defaultCharWidth * column}px`;
     return labelElement;
 };
 const selectVisualMode = (editor, destination) => {
@@ -82,13 +82,11 @@ const selectVisualMode = (editor, destination) => {
     }
 };
 class WordLabel {
-    destroy() {
-        // this.marker.destroy();
-    }
-    drawLabel(addMarker) {
-        const { textEditor, lineNumber, column, keyLabel } = this;
-        const labelElement = createLabelElement(textEditor, column, keyLabel, this.settings);
-        addMarker(textEditor, labelElement, lineNumber, column);
+    destroy() { }
+    drawLabel() {
+        const { textEditor, lineNumber, column, keyLabel, env: { settings, markers: { addEditorMarker }, } } = this;
+        const labelElement = createLabelElement(textEditor, keyLabel, settings);
+        addEditorMarker(textEditor, labelElement, lineNumber, column);
         this.element = labelElement;
         return this;
     }
@@ -157,14 +155,13 @@ const labeler = function (env) {
         const [firstVisibleRow, lastVisibleRow] = rows;
         // TODO: Right now there are issues with lastVisbleRow
         for (const lineNumber of _.range(firstVisibleRow, lastVisibleRow) /*excludes end value*/) {
-            const lineContents = textEditor.lineTextForScreenRow(lineNumber);
             if (textEditor.isFoldedAtScreenRow(lineNumber)) {
                 if (!env.keys.length) {
                     continue; // try continue?
                 }
                 const keyLabel = env.keys.shift();
                 const label = new WordLabel();
-                label.settings = env.settings;
+                label.env = env;
                 label.textEditor = textEditor;
                 label.keyLabel = keyLabel;
                 label.lineNumber = lineNumber;
@@ -172,6 +169,7 @@ const labeler = function (env) {
                 labels.push(label);
             }
             else {
+                const lineContents = textEditor.lineTextForScreenRow(lineNumber);
                 let word;
                 while ((word = env.settings.wordsPattern.exec(lineContents)) != null && env.keys.length) {
                     const keyLabel = env.keys.shift();
@@ -180,7 +178,7 @@ const labeler = function (env) {
                     // if the columns are out of bounds...
                     if (column > minColumn && column < maxColumn) {
                         const label = new WordLabel();
-                        label.settings = env.settings;
+                        label.env = env;
                         label.textEditor = textEditor;
                         label.keyLabel = keyLabel;
                         label.lineNumber = lineNumber;

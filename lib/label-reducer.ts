@@ -1,6 +1,6 @@
-'use babel';
+'use babel'
 
-import { Label } from './label-interface';
+import {Label} from './label-interface'
 
 // (PURE FUNCTION)
 //
@@ -13,11 +13,7 @@ import { Label } from './label-interface';
 // RETURNS new collection of labels
 // *without* the labels that do not start with the current key
 
-export default function labelReducer (labels: Array<Label>, currentKey : string) {
-    return labels.filter(function(label : Label) {
-        if (!label.keyLabel) {
-            return false;
-        }
-        return label.keyLabel.startsWith(currentKey);
-    });
-}
+export default (labels: Array<Label>, currentKey : string) =>
+  labels.filter(
+    ({keyLabel}: Label) => keyLabel && keyLabel.startsWith(currentKey)
+  )

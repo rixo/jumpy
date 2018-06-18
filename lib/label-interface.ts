@@ -1,23 +1,26 @@
-import { TextEditor } from 'atom'
 
-export interface LabelEnvironment {
-  keys: Array<string>
-  settings: any
-}
-
-type addMarker = (
-  editor: TextEditor,
+export type addMarker = (
   element: HTMLElement,
   lineNumber: number,
   column: number,
 ) => void
 
+interface MarkerManager {
+  addMarker: Function,
+  addEditorMarker: Function,
+}
+
+export interface LabelEnvironment {
+  keys: Array<string>
+  settings: any
+  markers: MarkerManager
+}
+
 export interface Label {
   // TODO: can I make this | null instead of undefined?
   keyLabel: string | undefined
   element: HTMLElement | null
-  settings: any
-  drawLabel(addMarker?: addMarker): Label
+  drawLabel(): Label
   animateBeacon(input: any): void
   jump(): void
   destroy(): void

@@ -11,13 +11,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //
 // RETURNS new collection of labels
 // *without* the labels that do not start with the current key
-function labelReducer(labels, currentKey) {
-    return labels.filter(function (label) {
-        if (!label.keyLabel) {
-            return false;
-        }
-        return label.keyLabel.startsWith(currentKey);
-    });
-}
-exports.default = labelReducer;
+exports.default = (labels, currentKey) => labels.filter(({ keyLabel }) => keyLabel && keyLabel.startsWith(currentKey));
 //# sourceMappingURL=label-reducer.js.map

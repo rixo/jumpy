@@ -22,6 +22,7 @@
   "engines": {
     "atom": ">0.50.0"
   },
+  "activationHooks": ["core:loaded-shell-environment"],
   "atomTestRunner": "./spec/jasmine3-runner",
   "consumedServices": {
     "status-bar": {

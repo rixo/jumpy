@@ -15,8 +15,8 @@ class SettingsViewLabel {
     // no need to cleanup: our elements will be cleaned out
     // when the parent layer is removed
     destroy() { }
-    drawLabel(addMarker) {
-        const { keyLabel, settings, targetEl, targetSelectorOptions: selOpts } = this;
+    drawLabel() {
+        const { keyLabel, targetEl, targetSelectorOptions: selOpts, env: { settings, markers: { addMarker }, }, } = this;
         this.element = util_1.createLabelElement(keyLabel, settings);
         const rect = targetEl.getBoundingClientRect();
         const pos = {};
@@ -36,7 +36,7 @@ class SettingsViewLabel {
             pos.top = rect.top + 'px';
             pos.left = rect.left + 'px';
         }
-        addMarker(null, this.element, pos);
+        addMarker(this.element, pos);
         return this;
     }
     // Animation not supported for now. Not high priority, what I
@@ -83,7 +83,7 @@ const labeler = $$$(() => {
         const createLabel = (env, paneItem, selectorOptions) => targetEl => {
             const label = new SettingsViewLabel();
             label.keyLabel = env.keys.shift();
-            label.settings = env.settings;
+            label.env = env;
             label.targetEl = targetEl;
             label.targetSelectorOptions = selectorOptions;
             label.settingsView = paneItem;

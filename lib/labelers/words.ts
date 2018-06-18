@@ -41,7 +41,6 @@ const isMaj = k => {
 
 const createLabelElement = (
   textEditor: TextEditor,
-  column: number,
   keyLabel: string,
   settings: any,
 ) => {
@@ -55,13 +54,13 @@ const createLabelElement = (
     const span = document.createElement('span')
     span.textContent = k
     span.classList.add('jumpy-key')
+    // TODO:rixo clean marker with
     span.style.width = `${Math.max(5, textEditor.defaultCharWidth - 1)}px`
     if (isMaj(k)) {
       span.classList.add('uppercase')
     }
     labelElement.appendChild(span)
   }
-  labelElement.style.left = `${textEditor.defaultCharWidth * column}px`
   return labelElement
 }
 
@@ -102,25 +101,30 @@ class WordLabel implements Label {
     keyLabel: string | undefined;
     textEditor: TextEditor | null;
     element: HTMLElement | null;
-    settings: any;
+    env: LabelEnvironment;
 
     // WordLabel specific:
     lineNumber: number;
     column: number;
     marker: any;
 
-    destroy() {
-        // this.marker.destroy();
-    }
+    destroy() {}
 
-    drawLabel(addMarker): Label {
-        const { textEditor, lineNumber, column, keyLabel } = this;
-        const labelElement = createLabelElement(
-          textEditor, column, keyLabel, this.settings
-        )
-        addMarker(textEditor, labelElement, lineNumber, column)
-        this.element = labelElement;
-        return this;
+    drawLabel(): Label {
+      const {
+        textEditor,
+        lineNumber,
+        column,
+        keyLabel,
+        env: {
+          settings,
+          markers: {addEditorMarker},
+        }
+      } = this;
+      const labelElement = createLabelElement(textEditor, keyLabel, settings)
+      addEditorMarker(textEditor, labelElement, lineNumber, column)
+      this.element = labelElement;
+      return this;
     }
 
     animateBeacon(input: any) {
@@ -198,7 +202,6 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
         const [ firstVisibleRow, lastVisibleRow ] = rows;
         // TODO: Right now there are issues with lastVisbleRow
         for (const lineNumber of _.range(firstVisibleRow, lastVisibleRow) /*excludes end value*/) {
-            const lineContents = textEditor.lineTextForScreenRow(lineNumber);
             if (textEditor.isFoldedAtScreenRow(lineNumber)) {
                 if (!env.keys.length) {
                     continue; // try continue?
@@ -207,13 +210,14 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
                 const keyLabel = env.keys.shift();
 
                 const label = new WordLabel();
-                label.settings = env.settings;
+                label.env = env;
                 label.textEditor = textEditor;
                 label.keyLabel = keyLabel;
                 label.lineNumber = lineNumber;
                 label.column = 0;
                 labels.push(label);
             } else {
+                const lineContents = textEditor.lineTextForScreenRow(lineNumber);
                 let word: any;
                 while ((word = env.settings.wordsPattern.exec(lineContents)) != null && env.keys.length) {
                     const keyLabel = env.keys.shift()
@@ -223,7 +227,7 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
                     // if the columns are out of bounds...
                     if (column > minColumn && column < maxColumn) {
                         const label = new WordLabel();
-                        label.settings = env.settings;
+                        label.env = env;
                         label.textEditor = textEditor;
                         label.keyLabel = keyLabel;
                         label.lineNumber = lineNumber;

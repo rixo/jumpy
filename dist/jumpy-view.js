@@ -14,91 +14,11 @@ const StateMachine = require("javascript-state-machine");
 const label_reducer_1 = require("./label-reducer");
 const keys_1 = require("./keys");
 const viewHelpers_1 = require("./viewHelpers");
-const assert = value => {
-    if (!value)
-        throw new Error('Failed assertion');
-};
-const createMarkerManager = () => {
-    const cache = {};
-    const layers = {};
-    const getLineTop = (editor, lineNumber) => {
-        const id = editor.id;
-        if (!cache[id]) {
-            cache[id] = {};
-        }
-        if (cache[id][lineNumber] === undefined) {
-            const editorEl = atom.views.getView(editor);
-            const lineEl = editorEl.querySelector(`.line[data-screen-row="${lineNumber}"]`);
-            cache[id][lineNumber] = lineEl
-                ? lineEl.getBoundingClientRect().top
-                : null;
-        }
-        return cache[id][lineNumber];
-    };
-    // TODO:rixo refactor addEditorMarker to use addMarker
-    const addMarker = (editor, element, lineNumber, column) => {
-        if (editor) {
-            addEditorMarker(editor, element, lineNumber, column);
-        }
-        else if (typeof lineNumber === 'object') {
-            appendMarker(element, lineNumber);
-        }
-        else {
-            appendMarker(element, column, lineNumber);
-        }
-    };
-    const _ABSOLUTE_LAYER_ = Symbol('_ABSOLUTE_LAYER_');
-    const appendMarker = (element, x, y) => {
-        const id = _ABSOLUTE_LAYER_;
-        if (!layers[id]) {
-            const layer = document.createElement('div');
-            layer.classList.add('jumpy-layer');
-            layer.classList.add('jumpy-layer-absolute');
-            const container = document.body;
-            layers[id] = { layer, container };
-        }
-        const { layer } = layers[id];
-        if (typeof x === 'object') {
-            Object.assign(element.style, x);
-            // Object.entries(x).forEach(([prop, value]) => {
-            //   element.style[prop]
-            // })
-        }
-        else {
-            element.style.left = `${x}px`;
-            element.style.top = `${y}px`;
-        }
-        layer.appendChild(element);
-    };
-    const addEditorMarker = (editor, element, lineNumber, column) => {
-        const id = editor.id;
-        const top = getLineTop(editor, lineNumber);
-        if (top === null) {
-            return;
-        }
-        if (!layers[id]) {
-            const layer = document.createElement('div');
-            layer.classList.add('jumpy-layer');
-            const editorEl = atom.views.getView(editor);
-            const lines = editorEl.querySelector('.lines');
-            assert(lines.parentElement.style.transform);
-            const offsetTop = lines.parentElement.getBoundingClientRect().top;
-            const charWidth = editorEl.getBaseCharacterWidth();
-            layers[id] = { layer, container: lines, offsetTop, charWidth };
-        }
-        const { layer, offsetTop, charWidth } = layers[id];
-        element.style.top = `${top - offsetTop}px`;
-        element.style.left = `${charWidth * column}px`;
-        layer.appendChild(element);
-    };
-    const getLayers = () => [...Object.values(layers), layers[_ABSOLUTE_LAYER_]];
-    return {
-        getLayers,
-        addMarker,
-    };
-};
+const marker_manager_1 = require("./marker-manager");
+const concatAll = (a, b) => a.concat(b);
+const hasKeyLabel = label => label.keyLabel;
 class JumpyView {
-    constructor(serializedState) {
+    constructor() {
         this.workspaceElement = atom.views.getView(atom.workspace);
         this.disposables = new atom_1.CompositeDisposable();
         this.drawnLabels = [];
@@ -142,57 +62,43 @@ class JumpyView {
                     for (const e of ['blur', 'click', 'scroll']) {
                         this.workspaceElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
                     }
+                    const markerManager = marker_manager_1.default();
                     const environment = {
                         keys: keys_1.getKeySet(atom.config.get('jumpy.customKeys')),
                         settings: this.settings,
+                        markers: markerManager,
                     };
                     // TODO:rixo move that responsibility in tree-view related module
                     const treeView = document.getElementsByClassName('tree-view');
                     if (treeView.length) {
                         viewHelpers_1.addJumpModeClasses(treeView[0]);
                     }
-                    // TODO: reduce with concat all labelers -> labeler.getLabels()
-                    const wordLabels = words_1.default(environment);
-                    const tabLabels = tabs_1.default(environment);
-                    const settingsLabels = settings_1.default(environment);
-                    const treeViewLabels = tree_view_1.default(environment);
-                    // TODO: I really think alllabels can just be drawnlabels
-                    // maybe I call labeler.draw() still returns back anyway?
-                    // Less functional?
-                    this.allLabels = [
-                        ...wordLabels,
-                        ...settingsLabels,
-                        ...treeViewLabels,
-                        ...tabLabels,
+                    const labellers = [
+                        words_1.default,
+                        settings_1.default,
+                        tree_view_1.default,
+                        tabs_1.default,
                     ];
+                    // // TODO: I really think alllabels can just be drawnlabels
+                    // // maybe I call labeler.draw() still returns back anyway?
+                    // // Less functional?
+                    this.allLabels = labellers
+                        .map(getLabels => getLabels(environment))
+                        .reduce(concatAll, [])
+                        // exclude labels without assigned keys
+                        .filter(hasKeyLabel);
                     // render
-                    const { addMarker, getLayers } = createMarkerManager();
                     const isTruthy = x => !!x;
-                    const drawLabel = addMarker => label => label.drawLabel(addMarker);
                     const newlyDrawnLabels = this.allLabels
-                        .map(drawLabel(addMarker))
+                        .map(label => label.drawLabel())
                         .filter(isTruthy);
-                    // // render tab labels
-                    // for (const label of tabLabels) {
-                    //   this.drawnLabels.push(label)
-                    //   label.drawLabel()
-                    // }
-                    // // render word labels
-                    // for (const label of wordLabels) {
-                    //   this.drawnLabels.push(label)
-                    //   label.drawLabel(addMarker)
-                    // }
                     this.drawnLabels = [...this.drawnLabels, ...newlyDrawnLabels];
                     // apply changes all at once to DOM
-                    for (const { layer, container } of getLayers()) {
-                        container.appendChild(layer);
-                    }
+                    markerManager.render();
                     // self contained cleaning function
                     this.destroyLabels = () => {
-                        for (const { layer } of getLayers()) {
-                            layer.remove();
-                        }
-                        for (const label of tabLabels) {
+                        markerManager.destroy();
+                        for (const label of this.allLabels) {
                             label.destroy();
                         }
                         this.destroyLabels = null;
@@ -347,6 +253,7 @@ class JumpyView {
                 'atom-text-editor',
                 '.package-card',
                 '.sub-section-heading.has-items$right',
+                '.repo-link',
             ],
         };
     }
@@ -374,8 +281,8 @@ class JumpyView {
             }
             this.drawnLabels = []; // Very important for GC.
             // Verifiable in Dev Tools -> Timeline -> Nodes.
+            this.allLabels = [];
         };
-        this.allLabels = [];
         this.workspaceElement.removeEventListener('keydown', this.keydownListener, true);
         for (const e of ['blur', 'click', 'scroll']) {
             this.workspaceElement.removeEventListener(e, () => this.clearJumpModeHandler(), true);

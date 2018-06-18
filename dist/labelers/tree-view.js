@@ -15,16 +15,16 @@ class TreeViewLabel {
     // no need to cleanup: our elements will be cleaned out
     // when the parent layer is removed
     destroy() { }
-    drawLabel(addMarker) {
-        const { keyLabel, settings, targetEl } = this;
+    drawLabel() {
+        const { keyLabel, targetEl, env: { settings, markers: { addMarker }, }, } = this;
         this.element = util_1.createLabelElement(keyLabel, settings);
         const rect = targetEl.getBoundingClientRect();
-        addMarker(null, this.element, rect.top, rect.left);
+        addMarker(this.element, rect.left, rect.top);
         return this;
     }
     animateBeacon() { }
     jump() {
-        const { treeView, treeViewEntry: entry, settings: { treeViewAutoSelect }, } = this;
+        const { treeView, treeViewEntry: entry, env: { settings: { treeViewAutoSelect }, } } = this;
         if (!entry) {
             throw new Error('Invalid label: missing "entry" property');
         }
@@ -61,8 +61,8 @@ const labeler = $$$(() => {
         };
         const createLabel = (env, pane) => targetEl => {
             const label = new TreeViewLabel();
+            label.env = env;
             label.keyLabel = env.keys.shift();
-            label.settings = env.settings;
             label.targetEl = targetEl;
             label.treeViewEntry = targetEl.closest('.entry');
             label.treeView = pane;

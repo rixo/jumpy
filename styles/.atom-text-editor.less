@@ -9,7 +9,9 @@
 }
 
 .jumpy-label {
-    &.irrelevant { // This is a marker to indicate not applicable (when 1 key is entered/known).
+    // this is a marker to indicate not applicable (i.e. when 1 key is
+    // entered/known)
+    &.irrelevant {
         visibility: hidden;
     }
     color: @base-background-color;

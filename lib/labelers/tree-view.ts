@@ -21,7 +21,7 @@ class TreeViewLabel implements Label {
   keyLabel: string
   textEditor: null
   element: HTMLElement
-  settings: any
+  env: LabelEnvironment
   targetEl: HTMLElement
   treeView: any // TreeView
   treeViewEntry: any
@@ -30,11 +30,18 @@ class TreeViewLabel implements Label {
   // when the parent layer is removed
   destroy() {}
 
-  drawLabel(addMarker): Label {
-    const {keyLabel, settings, targetEl} = this
+  drawLabel(): Label {
+    const {
+      keyLabel,
+      targetEl,
+      env: {
+        settings,
+        markers: {addMarker},
+      },
+    } = this
     this.element = createLabelElement(keyLabel, settings)
     const rect = targetEl.getBoundingClientRect()
-    addMarker(null, this.element, rect.top, rect.left)
+    addMarker(this.element, rect.left, rect.top)
     return this
   }
 
@@ -44,7 +51,9 @@ class TreeViewLabel implements Label {
     const {
       treeView,
       treeViewEntry: entry,
-      settings: {treeViewAutoSelect},
+      env: {
+        settings: {treeViewAutoSelect},
+      }
     } = this
     if (!entry) {
       throw new Error('Invalid label: missing "entry" property')
@@ -88,8 +97,8 @@ const labeler: Labeler = $$$(() => {
 
     const createLabel = (env, pane) => targetEl => {
       const label = new TreeViewLabel()
+      label.env = env
       label.keyLabel = env.keys.shift()
-      label.settings = env.settings
       label.targetEl = targetEl
       label.treeViewEntry = targetEl.closest('.entry')
       label.treeView = pane

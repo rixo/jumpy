@@ -19,7 +19,7 @@ const concatAll = (a, b) => a.concat(b);
 const hasKeyLabel = label => label.keyLabel;
 class JumpyView {
     constructor() {
-        this.workspaceElement = atom.views.getView(atom.workspace);
+        this.keyEventsElement = document.body;
         this.disposables = new atom_1.CompositeDisposable();
         this.drawnLabels = [];
         this.commands = new atom_1.CompositeDisposable();
@@ -58,9 +58,9 @@ class JumpyView {
                     };
                     this.setSettings();
                     this.currentKeys = '';
-                    this.workspaceElement.addEventListener('keydown', this.keydownListener, true);
+                    this.keyEventsElement.addEventListener('keydown', this.keydownListener, true);
                     for (const e of ['blur', 'click', 'scroll']) {
-                        this.workspaceElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
+                        this.keyEventsElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
                     }
                     const markerManager = marker_manager_1.default();
                     const environment = {
@@ -283,9 +283,9 @@ class JumpyView {
             // Verifiable in Dev Tools -> Timeline -> Nodes.
             this.allLabels = [];
         };
-        this.workspaceElement.removeEventListener('keydown', this.keydownListener, true);
+        this.keyEventsElement.removeEventListener('keydown', this.keydownListener, true);
         for (const e of ['blur', 'click', 'scroll']) {
-            this.workspaceElement.removeEventListener(e, () => this.clearJumpModeHandler(), true);
+            this.keyEventsElement.removeEventListener(e, () => this.clearJumpModeHandler(), true);
         }
         const treeView = document.getElementsByClassName('tree-view');
         if (treeView.length) {

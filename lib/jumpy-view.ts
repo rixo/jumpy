@@ -22,7 +22,7 @@ const concatAll = (a, b) => a.concat(b)
 const hasKeyLabel = label => label.keyLabel
 
 export default class JumpyView {
-  workspaceElement: any;
+  keyEventsElement: HTMLElement;
   disposables: CompositeDisposable;
   commands: CompositeDisposable;
   fsm: any;
@@ -39,7 +39,7 @@ export default class JumpyView {
   destroyLabels: Function | null;
 
   constructor() {
-    this.workspaceElement = atom.views.getView(atom.workspace);
+    this.keyEventsElement = document.body;
     this.disposables = new CompositeDisposable();
     this.drawnLabels = [];
     this.commands = new CompositeDisposable();
@@ -86,9 +86,9 @@ export default class JumpyView {
 
           this.currentKeys = '';
 
-          this.workspaceElement.addEventListener('keydown', this.keydownListener, true);
+          this.keyEventsElement.addEventListener('keydown', this.keydownListener, true);
           for (const e of ['blur', 'click', 'scroll']) {
-            this.workspaceElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
+            this.keyEventsElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
           }
 
           const markerManager = createMarkerManager()
@@ -338,9 +338,9 @@ export default class JumpyView {
       this.allLabels = [];
     };
 
-    this.workspaceElement.removeEventListener('keydown', this.keydownListener, true);
+    this.keyEventsElement.removeEventListener('keydown', this.keydownListener, true);
     for (const e of ['blur', 'click', 'scroll']) {
-      this.workspaceElement.removeEventListener(e, () => this.clearJumpModeHandler(), true);
+      this.keyEventsElement.removeEventListener(e, () => this.clearJumpModeHandler(), true);
     }
     const treeView: HTMLCollectionOf<HTMLElement> =
       <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tree-view');

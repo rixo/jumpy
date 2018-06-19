@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // const isMajRe = /[A-Z]/
 const majStart = 'A'.charCodeAt(0);
 const majEnd = 'Z'.charCodeAt(0);
-const isMaj = k => {
+exports.isMaj = k => {
     const charCode = k.charCodeAt(0);
     return charCode >= majStart && charCode <= majEnd;
 };
@@ -20,7 +20,7 @@ exports.createLabelElement = (keyLabel, settings) => {
         span.textContent = k;
         span.classList.add('jumpy-key');
         // span.style.width = `${Math.max(5, textEditor.defaultCharWidth - 1)}px`
-        if (isMaj(k)) {
+        if (exports.isMaj(k)) {
             span.classList.add('uppercase');
         }
         labelElement.appendChild(span);

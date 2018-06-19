@@ -11,21 +11,43 @@ const tabs_1 = require("./labelers/tabs");
 const settings_1 = require("./labelers/settings");
 const tree_view_1 = require("./labelers/tree-view");
 const StateMachine = require("javascript-state-machine");
-const label_reducer_1 = require("./label-reducer");
 const keys_1 = require("./keys");
 const viewHelpers_1 = require("./viewHelpers");
 const marker_manager_1 = require("./marker-manager");
+const $$$ = fn => fn();
 const concatAll = (a, b) => a.concat(b);
 const hasKeyLabel = label => label.keyLabel;
 class JumpyView {
     constructor() {
         this.keyEventsElement = document.body;
         this.disposables = new atom_1.CompositeDisposable();
-        this.drawnLabels = [];
         this.commands = new atom_1.CompositeDisposable();
+        this.resetCallbacks();
         // "setup" theme
         document.body.classList.add('jumpy-theme-vimium');
-        let jumpCallback;
+        // With smartCaseMatch, test is case-insensitive when there is no
+        // ambiguity (i.e. all next possible target chars are lowercase or
+        // they all are uppercase).
+        const createTest = $$$(() => {
+            const lc = s => s.toLowerCase();
+            const uc = s => s.toUpperCase();
+            return (character) => {
+                const testIndex = this.currentKeys.length;
+                if (this.settings.smartCaseMatch) {
+                    const lcChar = lc(character);
+                    const ucChar = uc(character);
+                    const hasUpperCase = this.currentLabels.some(({ keyLabel }) => keyLabel[testIndex] === ucChar);
+                    const hasLowerCase = this.currentLabels.some(({ keyLabel }) => keyLabel[testIndex] === lcChar);
+                    const hasMixedCase = hasUpperCase && hasLowerCase;
+                    return hasMixedCase
+                        ? ({ keyLabel }) => keyLabel[testIndex] === character
+                        : ({ keyLabel }) => lc(keyLabel[testIndex]) === lcChar;
+                }
+                else {
+                    return ({ keyLabel }) => keyLabel[testIndex] === character;
+                }
+            };
+        });
         this.fsm = StateMachine.create({
             initial: 'off',
             events: [
@@ -37,20 +59,16 @@ class JumpyView {
             ],
             callbacks: {
                 // onactivate: (event: any, from: string, to: string) => {
-                onactivate: (event, from, to, callback) => {
-                    jumpCallback = callback;
+                onactivate: () => {
                     this.keydownListener = (event) => {
-                        // use the code property for testing if
-                        // the key is relevant to Jumpy
-                        // that is, that it's an alpha char.
-                        // use the key character to pass the exact key
-                        // that is, (upper or lower) to the state machine.
-                        // if jumpy catches it...stop the event propagation.
-                        const { code, key, metaKey, ctrlKey, altKey } = event;
+                        // only test with `key`, not `prop` because code may be
+                        // misleading on some international keyboard layours for
+                        // example, 'm' key on FR azerty reports as code 'Semicolon')
+                        const { key, metaKey, ctrlKey, altKey } = event;
                         if (metaKey || ctrlKey || altKey) {
                             return;
                         }
-                        if (/^Key[A-Z]{1}$/.test(code)) {
+                        if (/^[A-Za-z]{1}$/.test(key)) {
                             event.preventDefault();
                             event.stopPropagation();
                             this.fsm.key(key);
@@ -62,9 +80,9 @@ class JumpyView {
                     for (const e of ['blur', 'click', 'scroll']) {
                         this.keyEventsElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
                     }
+                    const keys = keys_1.getKeySet(this.settings);
                     const markerManager = marker_manager_1.default();
                     const environment = {
-                        keys: keys_1.getKeySet(atom.config.get('jumpy.customKeys')),
                         settings: this.settings,
                         markers: markerManager,
                     };
@@ -79,20 +97,19 @@ class JumpyView {
                         tree_view_1.default,
                         tabs_1.default,
                     ];
-                    // // TODO: I really think alllabels can just be drawnlabels
-                    // // maybe I call labeler.draw() still returns back anyway?
-                    // // Less functional?
-                    this.allLabels = labellers
+                    let allLabels = labellers
                         .map(getLabels => getLabels(environment))
-                        .reduce(concatAll, [])
-                        // exclude labels without assigned keys
+                        .reduce(concatAll, []);
+                    allLabels = allLabels
+                        .map(keys.assignKeyLabel(allLabels.length))
+                        // exclude labels with no assigned keys
                         .filter(hasKeyLabel);
                     // render
                     const isTruthy = x => !!x;
-                    const newlyDrawnLabels = this.allLabels
+                    allLabels = allLabels
                         .map(label => label.drawLabel())
                         .filter(isTruthy);
-                    this.drawnLabels = [...this.drawnLabels, ...newlyDrawnLabels];
+                    this.allLabels = allLabels;
                     // apply changes all at once to DOM
                     markerManager.render();
                     // self contained cleaning function
@@ -101,43 +118,33 @@ class JumpyView {
                         for (const label of this.allLabels) {
                             label.destroy();
                         }
+                        // Very important for GC. Verifiable in
+                        // Dev Tools -> Timeline -> Nodes.
+                        this.allLabels = [];
                         this.destroyLabels = null;
                     };
                     this.currentLabels = _.clone(this.allLabels);
                 },
                 onkey: (event, from, to, character) => {
-                    // TODO: instead... of the following, maybe do with
-                    // some substate ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
-                    const testKeys = this.currentKeys + character;
-                    const matched = this.currentLabels.some((label) => {
-                        if (!label.keyLabel) {
-                            return false;
-                        }
-                        return label.keyLabel.startsWith(testKeys);
-                    });
+                    const test = createTest(character);
+                    const matched = this.currentLabels.some(test);
                     if (!matched) {
-                        if (this.statusBarJumpy) {
-                            this.statusBarJumpy.classList.add('no-match');
-                        }
-                        this.setStatus('No Match!');
+                        this.setStatus(false);
                         return;
                     }
                     // ^ the above makes this func feel not single responsibility
                     // some substate ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
-                    this.currentKeys = testKeys;
-                    for (const label of this.drawnLabels) {
-                        if (!label.keyLabel || !label.element) {
-                            continue;
-                        }
-                        if (label.keyLabel.startsWith(this.currentKeys)) {
-                            label.element.classList.add('hot');
-                        }
-                        else {
-                            label.element.classList.add('irrelevant');
-                        }
-                    }
                     this.setStatus(character);
-                    this.currentLabels = label_reducer_1.default(this.currentLabels, this.currentKeys);
+                    this.currentLabels = this.currentLabels.filter(label => {
+                        const match = test(label);
+                        const element = label.element;
+                        if (element) {
+                            const cls = match ? 'hot' : 'irrelevant';
+                            element.classList.add(cls);
+                        }
+                        return match;
+                    });
+                    this.currentKeys += character;
                     if (this.currentLabels.length === 1 && this.currentKeys.length === 2) {
                         if (this.fsm.can('jump')) {
                             this.fsm.jump(this.currentLabels[0]);
@@ -145,15 +152,22 @@ class JumpyView {
                     }
                 },
                 onjump: (event, from, to, location) => {
-                    if (jumpCallback) {
-                        const abort = jumpCallback(location);
-                        jumpCallback = null;
+                    const callback = this.callbacks.jump;
+                    if (callback) {
+                        const abort = callback(location);
                         if (abort !== false) {
+                            this.resetCallbacks();
                             location.jump();
                         }
                     }
                     else {
                         location.jump();
+                    }
+                },
+                onexit: () => {
+                    const callback = this.callbacks.cancel;
+                    if (callback) {
+                        callback();
                     }
                 },
                 onreset: (event, from, to) => {
@@ -202,6 +216,9 @@ class JumpyView {
             }
         }));
     }
+    resetCallbacks() {
+        this.callbacks = { jump: null, cancel: null };
+    }
     // This needs to be called when status bar is ready, so can't be called from constructor
     initializeStatusBar() {
         if (this.statusBar) {
@@ -231,6 +248,12 @@ class JumpyView {
     }
     setStatus(status) {
         if (this.statusBarJumpyStatus) {
+            if (status === false) {
+                if (this.statusBarJumpy) {
+                    this.statusBarJumpy.classList.add('no-match');
+                }
+                status = 'No Match!';
+            }
             this.statusBarJumpyStatus.innerHTML = status;
         }
     }
@@ -245,6 +268,11 @@ class JumpyView {
             highContrast: atom.config.get('jumpy.highContrast'),
             wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g'),
             treeViewAutoSelect: true,
+            preferAlternateHands: atom.config.get('jumpy.preferAlternateHands'),
+            smartCaseMatch: atom.config.get('jumpy.smartCaseMatch'),
+            customKeys: atom.config.get('jumpy.customKeys'),
+            customKeysLeft: atom.config.get('jumpy.customKeysLeft'),
+            customKeysRight: atom.config.get('jumpy.customKeysRight'),
             settingsTargetSelectors: [
                 'a',
                 'button',
@@ -257,11 +285,14 @@ class JumpyView {
             ],
         };
     }
-    // TODO cancel
-    toggle(callback, onCancel) {
+    toggle(onJump, onCancel) {
         if (this.fsm.can('activate')) {
             // console.time('activate')
-            this.fsm.activate(callback);
+            this.callbacks = {
+                jump: onJump,
+                cancel: onCancel,
+            };
+            this.fsm.activate(onJump);
             // console.timeEnd('activate')
         }
         else if (this.fsm.can('exit')) {
@@ -279,9 +310,6 @@ class JumpyView {
             if (this.destroyLabels) {
                 this.destroyLabels();
             }
-            this.drawnLabels = []; // Very important for GC.
-            // Verifiable in Dev Tools -> Timeline -> Nodes.
-            this.allLabels = [];
         };
         this.keyEventsElement.removeEventListener('keydown', this.keydownListener, true);
         for (const e of ['blur', 'click', 'scroll']) {

@@ -82,7 +82,6 @@ const labeler = $$$(() => {
         };
         const createLabel = (env, paneItem, selectorOptions) => targetEl => {
             const label = new SettingsViewLabel();
-            label.keyLabel = env.keys.shift();
             label.env = env;
             label.targetEl = targetEl;
             label.targetSelectorOptions = selectorOptions;

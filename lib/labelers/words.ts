@@ -195,11 +195,6 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
         // 'jumpy-jump-mode is for keymaps and utilized by tests
         addJumpModeClasses(editorView);
 
-        // current labels for current textEditor in loop.
-        if (!env.keys.length) {
-            continue;
-        }
-
         const [ minColumn, maxColumn ] = getVisibleColumnRange(editorView);
         const rows = textEditor.getVisibleRowRange();
 
@@ -211,25 +206,16 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
         // TODO: Right now there are issues with lastVisbleRow
         for (const lineNumber of _.range(firstVisibleRow, lastVisibleRow) /*excludes end value*/) {
             if (textEditor.isFoldedAtScreenRow(lineNumber)) {
-                if (!env.keys.length) {
-                    continue; // try continue?
-                }
-
-                const keyLabel = env.keys.shift();
-
                 const label = new WordLabel();
                 label.env = env;
                 label.textEditor = textEditor;
-                label.keyLabel = keyLabel;
                 label.lineNumber = lineNumber;
                 label.column = 0;
                 labels.push(label);
             } else {
                 const lineContents = textEditor.lineTextForScreenRow(lineNumber);
                 let word: any;
-                while ((word = env.settings.wordsPattern.exec(lineContents)) != null && env.keys.length) {
-                    const keyLabel = env.keys.shift()
-
+                while ((word = env.settings.wordsPattern.exec(lineContents)) != null) {
                     const column = word.index;
                     // Do not do anything... markers etc.
                     // if the columns are out of bounds...
@@ -237,7 +223,6 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
                         const label = new WordLabel();
                         label.env = env;
                         label.textEditor = textEditor;
-                        label.keyLabel = keyLabel;
                         label.lineNumber = lineNumber;
                         label.column = column;
                         labels.push(label);

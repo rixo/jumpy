@@ -10,8 +10,11 @@ interface MarkerManager {
   addEditorMarker: Function,
 }
 
+export interface KeySet {
+  assignKeyLabel(n: number): (o: object) => object
+}
+
 export interface LabelEnvironment {
-  keys: Array<string>
   settings: any
   markers: MarkerManager
 }

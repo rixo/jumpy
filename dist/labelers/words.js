@@ -150,10 +150,6 @@ const labeler = function (env) {
         const editorView = atom.views.getView(textEditor);
         // 'jumpy-jump-mode is for keymaps and utilized by tests
         viewHelpers_1.addJumpModeClasses(editorView);
-        // current labels for current textEditor in loop.
-        if (!env.keys.length) {
-            continue;
-        }
         const [minColumn, maxColumn] = getVisibleColumnRange(editorView);
         const rows = textEditor.getVisibleRowRange();
         if (!rows || !isVisible(editorView)) {
@@ -163,14 +159,9 @@ const labeler = function (env) {
         // TODO: Right now there are issues with lastVisbleRow
         for (const lineNumber of _.range(firstVisibleRow, lastVisibleRow) /*excludes end value*/) {
             if (textEditor.isFoldedAtScreenRow(lineNumber)) {
-                if (!env.keys.length) {
-                    continue; // try continue?
-                }
-                const keyLabel = env.keys.shift();
                 const label = new WordLabel();
                 label.env = env;
                 label.textEditor = textEditor;
-                label.keyLabel = keyLabel;
                 label.lineNumber = lineNumber;
                 label.column = 0;
                 labels.push(label);
@@ -178,8 +169,7 @@ const labeler = function (env) {
             else {
                 const lineContents = textEditor.lineTextForScreenRow(lineNumber);
                 let word;
-                while ((word = env.settings.wordsPattern.exec(lineContents)) != null && env.keys.length) {
-                    const keyLabel = env.keys.shift();
+                while ((word = env.settings.wordsPattern.exec(lineContents)) != null) {
                     const column = word.index;
                     // Do not do anything... markers etc.
                     // if the columns are out of bounds...
@@ -187,7 +177,6 @@ const labeler = function (env) {
                         const label = new WordLabel();
                         label.env = env;
                         label.textEditor = textEditor;
-                        label.keyLabel = keyLabel;
                         label.lineNumber = lineNumber;
                         label.column = column;
                         labels.push(label);

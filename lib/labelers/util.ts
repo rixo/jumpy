@@ -3,7 +3,7 @@
 // const isMajRe = /[A-Z]/
 const majStart = 'A'.charCodeAt(0)
 const majEnd = 'Z'.charCodeAt(0)
-const isMaj = k => {
+export const isMaj = k => {
   const charCode = k.charCodeAt(0)
   return charCode >= majStart && charCode <= majEnd
 }

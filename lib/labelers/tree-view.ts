@@ -98,7 +98,6 @@ const labeler: Labeler = $$$(() => {
     const createLabel = (env, pane) => targetEl => {
       const label = new TreeViewLabel()
       label.env = env
-      label.keyLabel = env.keys.shift()
       label.targetEl = targetEl
       label.treeViewEntry = targetEl.closest('.entry')
       label.treeView = pane

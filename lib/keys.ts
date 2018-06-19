@@ -1,8 +1,127 @@
 'use babel';
 
 import * as _ from 'lodash';
+import {KeySet} from './label-interface'
 
-export function getKeySet(customKeys: Array<string>) {
+export const getKeySet = settings => settings.preferAlternateHands
+  ? AlternateKeySet(settings)
+  : getKeySetLegacy(settings)
+
+const concatAll = (a, b) => a.concat(b)
+
+const combineLeft = ([left, right]: [string[], string[]]): string[][] => left.map(
+  leftKey => right.map(rightKey => leftKey + rightKey) // ['',...]
+) // [['', ...], ...]
+
+const KeySet = (combos: string[]): KeySet => {
+  const assignKeyLabel = () => o => {
+    o.keyLabel = combos.shift()
+    return o
+  }
+  return {
+    assignKeyLabel,
+  }
+}
+
+const $$$ = fn => fn()
+
+const AlternateKeySet = $$$(() => {
+  const sum = (a, b) => a + b
+  const multiplyLengths = ([left, right]) => left.length * right.length
+  const calcPairsLength = pairs => pairs
+    .map(multiplyLengths)
+    .reduce(sum, 0)
+  const upper = (keys: string[]): string[] => keys.map(key => key.toUpperCase())
+
+  const hashSettings = ({customKeysLeft, customKeysRight}) =>
+    `${String(customKeysLeft)} | ${String(customKeysRight)}`
+
+  let priorizedPairs: [string[], string[]][][]
+  let pairsLength
+  let allPairs
+  let lastSettingsHash = null
+
+  const refreshPairs = settings => {
+    const currentHash = hashSettings(settings)
+    if (currentHash === lastSettingsHash) {
+      return
+    } else {
+      lastSettingsHash = currentHash
+    }
+
+    const {customKeysLeft, customKeysRight} = settings
+    const leftLC: string[] = customKeysLeft
+    const rightLC: string[] = customKeysRight
+    const leftUC = upper(leftLC)
+    const rightUC = upper(rightLC)
+
+    priorizedPairs = [
+      [
+        [rightLC, leftLC],
+      ],
+      [
+        [leftLC, rightLC],
+        [rightLC, leftLC],
+      ],
+      // leftLC+leftLC is before best combos leftLC+rightLC & rightLC+leftLC
+      // because we suppose (hope) that interesting content will be roughly
+      // in the middle of the editor, and (2) that leftLC+left
+      [
+        [leftLC, leftLC],
+        [leftLC, rightLC],
+        [rightLC, leftLC],
+        [rightLC, rightLC],
+      ],
+      [
+        [leftLC, leftLC],
+        [leftLC, rightLC],
+        [rightLC, leftLC],
+        [rightLC, rightLC],
+        [leftLC, rightUC],
+        [rightLC, leftUC],
+        [leftUC, rightLC],
+        [rightUC, leftLC],
+        [leftUC, rightUC],
+        [rightUC, leftUC],
+        [leftUC, leftUC],
+        [rightUC, rightUC],
+      ],
+    ]
+    pairsLength = priorizedPairs.map(calcPairsLength)
+    allPairs = priorizedPairs[priorizedPairs.length - 1]
+  }
+
+  const pickPairs = n => {
+    const bestIndex = pairsLength.findIndex(l => n <= l)
+    return priorizedPairs[bestIndex] || allPairs
+  }
+
+  const generateCombos = (pairs: [string[], string[]][]): string[] => {
+    const combos = pairs
+      .map(combineLeft) // [[['',...],...],...]
+      .reduce(concatAll, []) // [['',...],...]
+      .reduce(concatAll, []) // ['', ...]
+    return combos
+  }
+
+  return (settings) => {
+    const assignKeyLabel = (n: number) => {
+      refreshPairs(settings)
+      const pairs = pickPairs(n)
+      const combos = generateCombos(pairs)
+      return o => {
+        o.keyLabel = combos.shift()
+        return o
+      }
+    }
+    return {
+      assignKeyLabel,
+    }
+  }
+})
+
+function getKeySetLegacy(settings) {
+    const customKeys = settings.customKeys;
     let lowerCharacters: Array<string> = [];
     let upperCharacters: Array<string> = [];
 
@@ -41,5 +160,5 @@ export function getKeySet(customKeys: Array<string>) {
     }
 
     // TODO: use TS's ReadonlyArray?
-    return keys;
+    return KeySet(keys);
 }

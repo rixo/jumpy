@@ -99,7 +99,6 @@ const getPaneItemSelector = paneItem => {
 const labeler: Labeler = function(env:LabelEnvironment):Array<TabLabel> {
     const labels:Array<TabLabel> = [];
     for (const paneItem of atom.workspace.getPaneItems()) {
-        const keyLabel:string | undefined = env.keys.shift();
         const selector = getPaneItemSelector(paneItem)
         if (selector === null) {
           continue
@@ -108,7 +107,6 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<TabLabel> {
         label.selector = getPaneItemSelector(paneItem)
         label.paneItem = paneItem
         label.settings = env.settings;
-        label.keyLabel = keyLabel;
         labels.push(label);
     }
     return labels;

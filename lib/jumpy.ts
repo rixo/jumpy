@@ -11,30 +11,56 @@ module.exports = {
             type: 'number',
             default: .75,
             minimum: 0,
-            maximum: 1
+            maximum: 1,
         },
         highContrast: {
             description: 'This will display a high contrast label, \
             usually green.  It is dynamic per theme.',
             type: 'boolean',
-            default: false
+            default: false,
         },
         useHomingBeaconEffectOnJumps: {
             description: 'This will animate a short lived homing beacon upon \
             jump.',
             type: 'boolean',
-            default: true
+            default: true,
         },
         matchPattern: {
             description: 'Jumpy will create labels based on this pattern.',
             type: 'string',
-            default: '([A-Z]+([0-9a-z])*)|[a-z0-9]{2,}'
+            default: '([A-Z]+([0-9a-z])*)|[a-z0-9]{2,}',
+        },
+        preferAlternateHands: {
+          description: "Prefer labels that alternate left and right hands ("
+          + "starting left). If enabled, customKeys will be ignored, in favor"
+          + "of customKeysLeft and customKeysRight.",
+          type: 'boolean',
+          default: true,
+        },
+        smartCaseMatch: {
+          description: "Match case insensitive when there is no ambiguity (that"
+          + "is, all possible next chars are lowercase or they all are uppercase).",
+          type: 'boolean',
+          default: true,
         },
         customKeys: {
-          description: 'Jumpy will use these characters in the specifed order to create labels (comma separated)',
+          description: "Jumpy will use these characters in the specifed order"
+          + " to create labels (comma separated).",
           type: 'array',
-          default: []
-        }
+          default: [],
+        },
+        customKeysLeft: {
+          description: "Custom keys for left (or first) hand, when "
+          + "preferAlternateHands is `true`.",
+          type: 'array',
+          default: 'azertqsdfgwxcv'.split(''),
+        },
+        customKeysRight: {
+          description: "Custom keys for right (or second) hand, when "
+          + "preferAlternateHands is `true`.",
+          type: 'array',
+          default: 'uiophjklmn'.split(''),
+        },
     },
 
     activate(state: any) {

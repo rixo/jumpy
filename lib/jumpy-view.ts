@@ -75,7 +75,7 @@ export default class JumpyView {
               return;
             }
 
-            if (/^Key[A-Z]{1}$/.test(code)) {
+            if (/^[A-Za-z]{1}$/.test(key)) {
               event.preventDefault();
               event.stopPropagation();
               this.fsm.key(key);

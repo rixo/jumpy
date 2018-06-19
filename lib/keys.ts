@@ -36,7 +36,7 @@ const AlternateKeySet = $$$(() => {
   const hashSettings = ({customKeysLeft, customKeysRight}) =>
     `${String(customKeysLeft)} | ${String(customKeysRight)}`
 
-  let priorizedPairs: [string[], string[]][][]
+  let pairsByPreferenceOrder: [string[], string[]][][]
   let pairsLength
   let allPairs
   let lastSettingsHash = null
@@ -55,7 +55,7 @@ const AlternateKeySet = $$$(() => {
     const leftUC = upper(leftLC)
     const rightUC = upper(rightLC)
 
-    priorizedPairs = [
+    pairsByPreferenceOrder = [
       [
         [rightLC, leftLC],
       ],
@@ -87,13 +87,13 @@ const AlternateKeySet = $$$(() => {
         [rightUC, rightUC],
       ],
     ]
-    pairsLength = priorizedPairs.map(calcPairsLength)
-    allPairs = priorizedPairs[priorizedPairs.length - 1]
+    pairsLength = pairsByPreferenceOrder.map(calcPairsLength)
+    allPairs = pairsByPreferenceOrder[pairsByPreferenceOrder.length - 1]
   }
 
   const pickPairs = n => {
     const bestIndex = pairsLength.findIndex(l => n <= l)
-    return priorizedPairs[bestIndex] || allPairs
+    return pairsByPreferenceOrder[bestIndex] || allPairs
   }
 
   const generateCombos = (pairs: [string[], string[]][]): string[] => {

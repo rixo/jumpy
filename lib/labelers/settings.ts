@@ -1,7 +1,7 @@
 'use babel'
 
 import { LabelEnvironment, Label, Labeler } from '../label-interface'
-import {createLabelElement} from './util'
+import { createLabelElement, animateBeacon } from './util';
 
 let SettingsView = null
 try {
@@ -46,9 +46,11 @@ class SettingsViewLabel implements Label {
       switch (selOpts) {
         case 'right':
           pos.top = rect.top + 'px'
-          // TODO it should be possible to do that cleanly with
-          //      CSS right property
-          pos.left = (rect.right - 16) + 'px'
+          pos.right =
+          (document.body.getBoundingClientRect().right - rect.right) + 'px'
+          // // TODO it should be possible to do that cleanly with
+          // //      CSS right property
+          // pos.left = (rect.right - 16) + 'px'
           break
         default:
           throw new Error('Unsupported selector option: ' + selOpts)
@@ -61,14 +63,23 @@ class SettingsViewLabel implements Label {
     return this
   }
 
-  // Animation not supported for now. Not high priority, what I
-  // really want is fast and reactive, not necessarily pimps.
-  animateBeacon() {}
-
   jump() {
-    const {targetEl: el} = this
-    if (el.focus) el.focus()
-    if (el.click) el.click()
+    const jump = () => {
+      const {targetEl: el} = this
+      if (el.focus) el.focus()
+      if (el.click) el.click()
+    }
+    // give some time to the beacon to avoid having it lost to lag
+    // due to changing setting "page"
+    if (atom.config.get('jumpy.useHomingBeaconEffectOnJumps')) {
+      setTimeout(jump, 150)
+    } else {
+      jump()
+    }
+  }
+
+  animateBeacon() {
+    animateBeacon(this.targetEl)
   }
 }
 
@@ -98,10 +109,16 @@ const labeler: Labeler = $$$(() => {
         const {top: pTop, bottom: pBottom, left: pLeft, right: pRight} = viewRect
         const targetRect = targetEl.getBoundingClientRect()
         const {top, bottom, left, right} = targetRect
-        return left <= pRight
-          && right >= pLeft
-          && top <= pBottom
-          && bottom >= pTop
+        const height = top - bottom
+        // left & right partially visible components are OK
+        return left < pRight
+          && right > pLeft
+          // but we don't want to overlap too much vertically, especially
+          // in the top because we don't want to overlap too much on tab
+          // bars => so we (arbitrarilly) accept targets 90% visible in the
+          // top, and 75% visible in the bottom
+          && top + .1 * height >= pTop
+          && bottom - .25 * height <= pBottom
       }
     }
 
@@ -117,9 +134,10 @@ const labeler: Labeler = $$$(() => {
     return env => ({pane, view}) => {
       const createSelectorLabels = selectorSpec => {
         const [selector, align] = selectorSpec.split('$')
-        return Array.from(view.querySelectorAll(selector))
+        const visibleEls = Array.from(view.querySelectorAll(selector))
           .filter(isVisibleElement)
           .filter(isInViewVisibleRect(view))
+        return visibleEls
           .map(createLabel(env, pane, align))
       }
       const viewLabels = env.settings.settingsTargetSelectors

@@ -28,11 +28,8 @@ const isMaj = k => {
 };
 const createLabelElement = (textEditor, keyLabel, settings) => {
     const labelElement = document.createElement('div');
-    labelElement.style.fontSize = settings.fontSize;
     labelElement.classList.add('jumpy-label'); // For styling and tests
-    if (settings.highContrast) {
-        labelElement.classList.add('high-contrast');
-    }
+    labelElement.classList.add('jumpy-label-editor'); // For styling and tests
     for (const k of keyLabel) {
         const span = document.createElement('span');
         span.textContent = k;
@@ -90,19 +87,21 @@ class WordLabel {
         this.element = labelElement;
         return this;
     }
-    animateBeacon(input) {
-        const position = input;
+    animateBeacon() {
+        const position = new atom_1.Point(this.lineNumber, this.column);
         const range = new atom_1.Range(position, position);
         const marker = this.textEditor.markScreenRange(range, { invalidate: 'never' });
         const beacon = document.createElement('span');
-        beacon.classList.add('beacon'); // For styling and tests
+        beacon.classList.add('jumpy-beacon'); // For styling and tests
+        beacon.classList.add('jumpy-beacon-editor'); // For styling and tests
+        const tx = this.textEditor.getDefaultCharWidth() / 2;
+        const ty = -this.textEditor.getLineHeightInPixels() / 2;
+        beacon.style.transform = `translate(${tx}px, ${ty}px)`;
         this.textEditor.decorateMarker(marker, {
             item: beacon,
             type: 'overlay'
         });
-        setTimeout(function () {
-            marker.destroy();
-        }, 150);
+        setTimeout(() => marker.destroy(), 150);
     }
     jump() {
         const currentEditor = this.textEditor;
@@ -137,9 +136,6 @@ class WordLabel {
         }
         else {
             currentEditor.setCursorScreenPosition(position);
-        }
-        if (atom.config.get('jumpy.useHomingBeaconEffectOnJumps')) {
-            this.animateBeacon(position);
         }
     }
 }

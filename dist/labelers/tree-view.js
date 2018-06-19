@@ -22,7 +22,9 @@ class TreeViewLabel {
         addMarker(this.element, rect.left, rect.top);
         return this;
     }
-    animateBeacon() { }
+    animateBeacon() {
+        util_1.animateBeacon(this.targetEl);
+    }
     jump() {
         const { treeView, treeViewEntry: entry, env: { settings: { treeViewAutoSelect }, } } = this;
         if (!entry) {

@@ -1,0 +1,75 @@
+@import "ui-variables";
+
+#status-bar-jumpy {
+  color: @text-color-info;
+  &.no-match,
+  &.no-match .status {
+    color: @text-color-warning;
+  }
+}
+
+.jumpy-label {
+  position: absolute;
+  z-index: 1; // above settings-view icon
+  z-index: 2; // above tree-view
+  vertical-align: bottom;
+  &.jumpy-label-editor {
+    transform: translate(0, -20%);
+  }
+  &.tab-label {
+    transform: translate(0, 66%);
+  }
+  // this is a marker to indicate not applicable (i.e. when 1 key is
+  // entered/known)
+  &.irrelevant {
+    visibility: hidden;
+  }
+}
+
+.jumpy-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.jumpy-hide-matched-chars {
+  .jumpy-label {
+    // hide hot char
+    &.hot {
+      .jumpy-key {
+        &:nth-child(1) {
+          display: none;
+        }
+        &:nth-child(2) {
+          text-align: center;
+          padding-left: 0;
+        }
+      }
+    }
+    &:not(.hot) {
+      .jumpy-key {
+        font-weight: normal;
+        &:nth-child(1) {
+          font-weight: bold;
+        }
+        &:nth-child(2) {
+          opacity: .66;
+          transform: translateX(-1px);
+        }
+      }
+    }
+  }
+}
+
+.jumpy-all-uppercase {
+  text-transform: uppercase;
+  // still, make uppercase visible
+  .jumpy-key.uppercase {
+    font-weight: bold;
+    color: red;
+  }
+}
+
+@import "beacon.less";

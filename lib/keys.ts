@@ -32,6 +32,7 @@ const AlternateKeySet = $$$(() => {
     .map(multiplyLengths)
     .reduce(sum, 0)
   const upper = (keys: string[]): string[] => keys.map(key => key.toUpperCase())
+  const lower = (keys: string[]): string[] => keys.map(key => key.toLowerCase())
 
   const hashSettings = ({customKeysLeft, customKeysRight}) =>
     `${String(customKeysLeft)} | ${String(customKeysRight)}`
@@ -50,15 +51,12 @@ const AlternateKeySet = $$$(() => {
     }
 
     const {customKeysLeft, customKeysRight} = settings
-    const leftLC: string[] = customKeysLeft
-    const rightLC: string[] = customKeysRight
+    const leftLC: string[] = lower(customKeysLeft)
+    const rightLC: string[] = lower(customKeysRight)
     const leftUC = upper(leftLC)
     const rightUC = upper(rightLC)
 
     pairsByPreferenceOrder = [
-      [
-        [rightLC, leftLC],
-      ],
       [
         [leftLC, rightLC],
         [rightLC, leftLC],

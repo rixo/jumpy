@@ -6,8 +6,8 @@ export type addMarker = (
 ) => void
 
 interface MarkerManager {
-  addMarker: Function,
-  addEditorMarker: Function,
+  addMarker: Function
+  addEditorMarker: Function
 }
 
 export interface KeySet {
@@ -20,11 +20,10 @@ export interface LabelEnvironment {
 }
 
 export interface Label {
-  // TODO: can I make this | null instead of undefined?
-  keyLabel: string | undefined
-  element: HTMLElement | null
+  keyLabel: string
+  element: HTMLElement
   drawLabel(): Label
-  animateBeacon(input: any): void
+  animateBeacon(): void
   jump(): void
   destroy(): void
 }

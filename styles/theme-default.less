@@ -1,0 +1,21 @@
+@import "ui-variables";
+
+.jumpy-theme-high-contrast,
+.jumpy-theme-default {
+    .jumpy-label {
+        color: @base-background-color;
+        background: @text-color;
+        padding: .15em;
+        border-radius: @component-border-radius;
+        font-family: @font-family;
+        &.tab-label {
+            margin-left: 10px;
+        }
+    }
+}
+
+.jumpy-theme-high-contrast {
+  .jumpy-label {
+    background-color: @background-color-success;
+  }
+}

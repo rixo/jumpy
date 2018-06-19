@@ -23,8 +23,6 @@ class JumpyView {
         this.disposables = new atom_1.CompositeDisposable();
         this.commands = new atom_1.CompositeDisposable();
         this.resetCallbacks();
-        // "setup" theme
-        document.body.classList.add('jumpy-theme-vimium');
         // With smartCaseMatch, test is case-insensitive when there is no
         // ambiguity (i.e. all next possible target chars are lowercase or
         // they all are uppercase).
@@ -75,15 +73,16 @@ class JumpyView {
                         }
                     };
                     this.setSettings();
+                    const { settings } = this;
                     this.currentKeys = '';
                     this.keyEventsElement.addEventListener('keydown', this.keydownListener, true);
                     for (const e of ['blur', 'click', 'scroll']) {
                         this.keyEventsElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
                     }
-                    const keys = keys_1.getKeySet(this.settings);
-                    const markerManager = marker_manager_1.default();
+                    const keys = keys_1.getKeySet(settings);
+                    const markerManager = marker_manager_1.default(settings);
                     const environment = {
-                        settings: this.settings,
+                        settings,
                         markers: markerManager,
                     };
                     // TODO:rixo move that responsibility in tree-view related module
@@ -151,17 +150,27 @@ class JumpyView {
                         }
                     }
                 },
-                onjump: (event, from, to, location) => {
+                onbeforejump: (event, from, to, location) => {
+                    const jump = () => {
+                        // animation must take place before element is removed from DOM,
+                        // which can be triggered by the jump implem (e.g. when tabs
+                        // changes focused pane, triggering a blur event that we're
+                        // listening)
+                        if (atom.config.get('jumpy.useHomingBeaconEffectOnJumps')) {
+                            location.animateBeacon();
+                        }
+                        location.jump();
+                        this.resetCallbacks();
+                    };
                     const callback = this.callbacks.jump;
                     if (callback) {
                         const abort = callback(location);
                         if (abort !== false) {
-                            this.resetCallbacks();
-                            location.jump();
+                            jump();
                         }
                     }
                     else {
-                        location.jump();
+                        jump();
                     }
                 },
                 onexit: () => {
@@ -264,8 +273,8 @@ class JumpyView {
         }
         const fontSizeString = `${fontSize * 100}%`;
         this.settings = {
+            theme: atom.config.get('jumpy.theme'),
             fontSize: fontSizeString,
-            highContrast: atom.config.get('jumpy.highContrast'),
             wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g'),
             treeViewAutoSelect: true,
             preferAlternateHands: atom.config.get('jumpy.preferAlternateHands'),
@@ -273,13 +282,16 @@ class JumpyView {
             customKeys: atom.config.get('jumpy.customKeys'),
             customKeysLeft: atom.config.get('jumpy.customKeysLeft'),
             customKeysRight: atom.config.get('jumpy.customKeysRight'),
+            allUppercase: atom.config.get('jumpy.allUppercase'),
+            hideMatchedChars: atom.config.get('jumpy.hideMatchedChars'),
+            useEditorFontFamily: atom.config.get('jumpy.useEditorFontFamily'),
             settingsTargetSelectors: [
                 'a',
-                'button',
-                'input:not([tabIndex = "-1"])',
+                'button:not([tabIndex="-1"])',
+                'input:not([tabIndex="-1"])',
                 'select',
                 'atom-text-editor',
-                '.package-card',
+                '.sub-section .package-card',
                 '.sub-section-heading.has-items$right',
                 '.repo-link',
             ],

@@ -44,9 +44,6 @@ export default class JumpyView {
     this.commands = new CompositeDisposable();
     this.resetCallbacks()
 
-    // "setup" theme
-    document.body.classList.add('jumpy-theme-vimium')
-
     // With smartCaseMatch, test is case-insensitive when there is no
     // ambiguity (i.e. all next possible target chars are lowercase or
     // they all are uppercase).
@@ -102,6 +99,7 @@ export default class JumpyView {
           };
 
           this.setSettings();
+          const {settings} = this;
 
           this.currentKeys = '';
 
@@ -110,10 +108,10 @@ export default class JumpyView {
             this.keyEventsElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
           }
 
-          const keys = getKeySet(this.settings)
-          const markerManager = createMarkerManager()
+          const keys = getKeySet(settings)
+          const markerManager = createMarkerManager(settings)
           const environment: LabelEnvironment = {
-            settings: this.settings,
+            settings,
             markers: markerManager,
           };
 
@@ -198,16 +196,26 @@ export default class JumpyView {
           }
         },
 
-        onjump: (event: any, from: string, to: string, location: Label) => {
+        onbeforejump: (event: any, from: string, to: string, location: Label) => {
+          const jump = () => {
+            // animation must take place before element is removed from DOM,
+            // which can be triggered by the jump implem (e.g. when tabs
+            // changes focused pane, triggering a blur event that we're
+            // listening)
+            if (atom.config.get('jumpy.useHomingBeaconEffectOnJumps')) {
+                location.animateBeacon();
+            }
+            location.jump()
+            this.resetCallbacks()
+          }
           const callback = this.callbacks.jump
           if (callback) {
             const abort = callback(location)
             if (abort !== false) {
-              this.resetCallbacks()
-              location.jump()
+              jump()
             }
           } else {
-            location.jump()
+            jump()
           }
         },
 
@@ -322,8 +330,8 @@ export default class JumpyView {
     }
     const fontSizeString: string = `${fontSize * 100}%`;
     this.settings = {
+      theme: atom.config.get('jumpy.theme'),
       fontSize: fontSizeString,
-      highContrast: <boolean>atom.config.get('jumpy.highContrast'),
       wordsPattern: new RegExp(atom.config.get('jumpy.matchPattern'), 'g'),
       treeViewAutoSelect: true,
       preferAlternateHands: atom.config.get('jumpy.preferAlternateHands'),
@@ -331,13 +339,16 @@ export default class JumpyView {
       customKeys: atom.config.get('jumpy.customKeys'),
       customKeysLeft: atom.config.get('jumpy.customKeysLeft'),
       customKeysRight: atom.config.get('jumpy.customKeysRight'),
+      allUppercase: atom.config.get('jumpy.allUppercase'),
+      hideMatchedChars: atom.config.get('jumpy.hideMatchedChars'),
+      useEditorFontFamily: atom.config.get('jumpy.useEditorFontFamily'),
       settingsTargetSelectors: [ // TODO config
         'a',
-        'button',
-        'input:not([tabIndex = "-1"])',
+        'button:not([tabIndex="-1"])',
+        'input:not([tabIndex="-1"])',
         'select',
         'atom-text-editor',
-        '.package-card',
+        '.sub-section .package-card',
         '.sub-section-heading.has-items$right',
         '.repo-link',
       ],

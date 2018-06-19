@@ -22,11 +22,23 @@ const createTextEditorLocator = (editor) => {
         };
     };
 };
-exports.default = () => {
+exports.default = (settings) => {
+    const { theme, fontSize, allUppercase, hideMatchedChars, useEditorFontFamily, } = settings;
     // create maker layer element
     const layer = document.createElement('div');
-    layer.classList.add('jumpy-layer');
-    layer.classList.add('jumpy-layer-absolute');
+    const { classList, style } = layer;
+    classList.add('jumpy-layer');
+    classList.add(`jumpy-theme-${theme}`);
+    if (allUppercase) {
+        classList.add('jumpy-all-uppercase');
+    }
+    if (hideMatchedChars) {
+        classList.add('jumpy-hide-matched-chars');
+    }
+    if (useEditorFontFamily) {
+        style.fontFamily = atom.config.get('editor.fontFamily');
+    }
+    style.fontSize = fontSize;
     const addMarker = (element, x, y) => {
         if (typeof x === 'object') {
             Object.assign(element.style, x);

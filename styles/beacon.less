@@ -3,16 +3,14 @@
 
 @import "ui-variables";
 
-.beacon {
-    display: block;
-    position: absolute;
+.jumpy-beacon {
+    position: fixed;
     border-radius: 1px;
     width: 2px;
     height: 2px;
-    z-index: -1;
+    tranform: translate(-1px, -1px);
+    z-index: 4;
     -webkit-animation: ripple .085s;
-    content: '';
-    top: -6px;
     &.tab-beacon {
         // TODO: Really work needs to be done to trigger *after* tab switch
         left: 18px;

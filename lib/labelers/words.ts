@@ -44,12 +44,9 @@ const createLabelElement = (
   keyLabel: string,
   settings: any,
 ) => {
-  const labelElement = document.createElement('div');
-  labelElement.style.fontSize = settings.fontSize;
-  labelElement.classList.add('jumpy-label'); // For styling and tests
-  if (settings.highContrast) {
-     labelElement.classList.add('high-contrast');
-  }
+  const labelElement = document.createElement('div')
+  labelElement.classList.add('jumpy-label') // For styling and tests
+  labelElement.classList.add('jumpy-label-editor') // For styling and tests
   for (const k of keyLabel) {
     const span = document.createElement('span')
     span.textContent = k
@@ -127,20 +124,21 @@ class WordLabel implements Label {
       return this;
     }
 
-    animateBeacon(input: any) {
-        const position = input;
+    animateBeacon() {
+        const position = new Point(this.lineNumber, this.column);
         const range = new Range(position, position);
         const marker = this.textEditor.markScreenRange(range, { invalidate: 'never' });
         const beacon = document.createElement('span');
-        beacon.classList.add('beacon'); // For styling and tests
-        this.textEditor.decorateMarker(marker,
-            {
-                item: beacon,
-                type: 'overlay'
-            });
-        setTimeout(function() {
-            marker.destroy();
-        } , 150);
+        beacon.classList.add('jumpy-beacon'); // For styling and tests
+        beacon.classList.add('jumpy-beacon-editor'); // For styling and tests
+        const tx = this.textEditor.getDefaultCharWidth() / 2;
+        const ty = -this.textEditor.getLineHeightInPixels() / 2;
+        beacon.style.transform = `translate(${tx}px, ${ty}px)`;
+        this.textEditor.decorateMarker(marker, {
+            item: beacon,
+            type: 'overlay'
+        });
+        setTimeout(() => marker.destroy(), 150);
     }
 
     jump() {
@@ -178,10 +176,6 @@ class WordLabel implements Label {
             currentEditor.selectToScreenPosition(position);
         } else {
             currentEditor.setCursorScreenPosition(position);
-        }
-
-        if (atom.config.get('jumpy.useHomingBeaconEffectOnJumps')) {
-            this.animateBeacon(position);
         }
     }
 }

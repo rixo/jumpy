@@ -13,11 +13,7 @@ export const createLabelElement = (
   settings: any,
 ) => {
   const labelElement = document.createElement('div');
-  labelElement.style.fontSize = settings.fontSize;
   labelElement.classList.add('jumpy-label'); // For styling and tests
-  if (settings.highContrast) {
-     labelElement.classList.add('high-contrast');
-  }
   for (const k of keyLabel) {
     const span = document.createElement('span')
     span.textContent = k
@@ -30,4 +26,25 @@ export const createLabelElement = (
   }
   // labelElement.style.left = `${textEditor.defaultCharWidth * column}px`
   return labelElement
+}
+
+export const animateBeacon = (
+  target: HTMLElement,
+  delay: boolean|number = false,
+) => {
+  const beacon = document.createElement('div')
+  const {style, classList} = beacon
+  classList.add('jumpy-beacon')
+  const {top, left, width, height} = target.getBoundingClientRect()
+  style.left = left + width / 2 + 'px'
+  style.top = top + height / 2 + 'px'
+  const display = () => {
+    document.body.appendChild(beacon)
+    setTimeout(() => beacon.remove(), 150)
+  }
+  if (delay === false) {
+    display()
+  } else {
+    setTimeout(display, delay)
+  }
 }

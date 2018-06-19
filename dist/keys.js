@@ -25,6 +25,7 @@ const AlternateKeySet = $$$(() => {
         .map(multiplyLengths)
         .reduce(sum, 0);
     const upper = (keys) => keys.map(key => key.toUpperCase());
+    const lower = (keys) => keys.map(key => key.toLowerCase());
     const hashSettings = ({ customKeysLeft, customKeysRight }) => `${String(customKeysLeft)} | ${String(customKeysRight)}`;
     let pairsByPreferenceOrder;
     let pairsLength;
@@ -39,14 +40,11 @@ const AlternateKeySet = $$$(() => {
             lastSettingsHash = currentHash;
         }
         const { customKeysLeft, customKeysRight } = settings;
-        const leftLC = customKeysLeft;
-        const rightLC = customKeysRight;
+        const leftLC = lower(customKeysLeft);
+        const rightLC = lower(customKeysRight);
         const leftUC = upper(leftLC);
         const rightUC = upper(rightLC);
         pairsByPreferenceOrder = [
-            [
-                [rightLC, leftLC],
-            ],
             [
                 [leftLC, rightLC],
                 [rightLC, leftLC],

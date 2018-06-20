@@ -5,6 +5,9 @@ import { LabelEnvironment, Label, Labeler } from '../label-interface';
 import { addJumpModeClasses } from '../viewHelpers';
 import { Point, Range, TextEditor as TextEditorBase } from 'atom';
 
+// reloads regex implem without having to restart Atom
+const DEBUG_REGEX = false
+
 interface TextEditor extends TextEditorBase {
   // accessing the private member directly because it is used in the
   // performance critical loop of displaying labels, and we don't
@@ -12,6 +15,8 @@ interface TextEditor extends TextEditorBase {
   defaultCharWidth: number
   getVisibleRowRange(): [number, number]
 }
+
+const $$$ = fn => fn()
 
 function getVisibleColumnRange (editorView: any): Array<number> {
     const charWidth = editorView.getDefaultCharacterWidth()
@@ -31,7 +36,6 @@ function isVisible(element) {
     return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
 
-// const isMajRe = /[A-Z]/
 const majStart = 'A'.charCodeAt(0)
 const majEnd = 'Z'.charCodeAt(0)
 const isMaj = k => {
@@ -131,7 +135,7 @@ class WordLabel implements Label {
         const beacon = document.createElement('span');
         beacon.classList.add('jumpy-beacon'); // For styling and tests
         beacon.classList.add('jumpy-beacon-editor'); // For styling and tests
-        const tx = this.textEditor.getDefaultCharWidth() / 2;
+        const tx = this.textEditor.defaultCharWidth / 2;
         const ty = -this.textEditor.getLineHeightInPixels() / 2;
         beacon.style.transform = `translate(${tx}px, ${ty}px)`;
         this.textEditor.decorateMarker(marker, {
@@ -180,9 +184,47 @@ class WordLabel implements Label {
     }
 }
 
+const getRegex = $$$(() => {
+  interface Matcher {
+    regex: RegExp
+    adjustPosition: ((match: RegExpExecArray, label: WordLabel) => {}) | false
+  }
+  const regexFile = 'words-regex-match-all-the-things.js'
+  const matchAllTheThings = require(`./${regexFile}`)
+  const loadRegexDebug: () => Matcher = <any> DEBUG_REGEX && (() => {
+    try {
+      const fs = require('fs')
+      const code = fs.readFileSync(`${__dirname}/${regexFile}`, 'utf8')
+      return eval(code)
+    } catch (err) {
+      console.error(err)
+      debugger
+    }
+  })
+  return ({
+    useBuiltInRegexMatchAllTheThings,
+    wordsPattern,
+  }: {
+    useBuiltInRegexMatchAllTheThings: boolean,
+    wordsPattern: RegExp,
+  }): Matcher => {
+    if (useBuiltInRegexMatchAllTheThings) {
+      if (DEBUG_REGEX) {
+        return loadRegexDebug()
+      } else {
+        return matchAllTheThings
+      }
+    } else {
+      return {regex: wordsPattern, adjustPosition: false}
+    }
+  }
+})
+
 const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
     const labels:Array<WordLabel> = [];
-    env.settings.wordsPattern.lastIndex = 0; // reset the RegExp for subsequent calls.
+    const {regex, adjustPosition} = getRegex(env.settings);
+    // reset the RegExp for subsequent calls.
+    regex.lastIndex = 0;
     for (const textEditor of <Array<TextEditor>>atom.workspace.getTextEditors()) {
         const editorView = atom.views.getView(textEditor);
 
@@ -209,7 +251,7 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
             } else {
                 const lineContents = textEditor.lineTextForScreenRow(lineNumber);
                 let word: any;
-                while ((word = env.settings.wordsPattern.exec(lineContents)) != null) {
+                while ((word = regex.exec(lineContents)) != null) {
                     const column = word.index;
                     // Do not do anything... markers etc.
                     // if the columns are out of bounds...
@@ -219,10 +261,17 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
                         label.textEditor = textEditor;
                         label.lineNumber = lineNumber;
                         label.column = column;
-                        labels.push(label);
+                        // support for snake & kebab case
+                        if (adjustPosition) {
+                            labels.push(
+                              ...adjustPosition(word, label)
+                            )
+                        } else {
+                            labels.push(label);
+                        }
                     }
                     // prevent infinite loop with, for example /^$/.test('')
-                    if (lineContents.length === 0) {
+                    if (lineContents.length === 0 || word[0].length === 0) {
                       break
                     }
                 }

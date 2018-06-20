@@ -289,6 +289,9 @@ class JumpyView {
             allUppercase: atom.config.get('jumpy.allUppercase'),
             hideMatchedChars: atom.config.get('jumpy.hideMatchedChars'),
             useEditorFontFamily: atom.config.get('jumpy.useEditorFontFamily'),
+            // TODO config (but the best config should probably be a list of
+            //      possible built-in regex to choose from)
+            useBuiltInRegexMatchAllTheThings: true,
             settingsTargetSelectors: [
                 'a',
                 'button:not([tabIndex="-1"])',

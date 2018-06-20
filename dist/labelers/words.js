@@ -4,6 +4,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const viewHelpers_1 = require("../viewHelpers");
 const atom_1 = require("atom");
+// reloads regex implem without having to restart Atom
+const DEBUG_REGEX = false;
+const $$$ = fn => fn();
 function getVisibleColumnRange(editorView) {
     const charWidth = editorView.getDefaultCharacterWidth();
     // FYI: asserts:
@@ -19,7 +22,6 @@ function getVisibleColumnRange(editorView) {
 function isVisible(element) {
     return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
-// const isMajRe = /[A-Z]/
 const majStart = 'A'.charCodeAt(0);
 const majEnd = 'Z'.charCodeAt(0);
 const isMaj = k => {
@@ -94,7 +96,7 @@ class WordLabel {
         const beacon = document.createElement('span');
         beacon.classList.add('jumpy-beacon'); // For styling and tests
         beacon.classList.add('jumpy-beacon-editor'); // For styling and tests
-        const tx = this.textEditor.getDefaultCharWidth() / 2;
+        const tx = this.textEditor.defaultCharWidth / 2;
         const ty = -this.textEditor.getLineHeightInPixels() / 2;
         beacon.style.transform = `translate(${tx}px, ${ty}px)`;
         this.textEditor.decorateMarker(marker, {
@@ -139,9 +141,39 @@ class WordLabel {
         }
     }
 }
+const getRegex = $$$(() => {
+    const regexFile = 'words-regex-match-all-the-things.js';
+    const matchAllTheThings = require(`./${regexFile}`);
+    const loadRegexDebug = DEBUG_REGEX && (() => {
+        try {
+            const fs = require('fs');
+            const code = fs.readFileSync(`${__dirname}/${regexFile}`, 'utf8');
+            return eval(code);
+        }
+        catch (err) {
+            console.error(err);
+            debugger;
+        }
+    });
+    return ({ useBuiltInRegexMatchAllTheThings, wordsPattern, }) => {
+        if (useBuiltInRegexMatchAllTheThings) {
+            if (DEBUG_REGEX) {
+                return loadRegexDebug();
+            }
+            else {
+                return matchAllTheThings;
+            }
+        }
+        else {
+            return { regex: wordsPattern, adjustPosition: false };
+        }
+    };
+});
 const labeler = function (env) {
     const labels = [];
-    env.settings.wordsPattern.lastIndex = 0; // reset the RegExp for subsequent calls.
+    const { regex, adjustPosition } = getRegex(env.settings);
+    // reset the RegExp for subsequent calls.
+    regex.lastIndex = 0;
     for (const textEditor of atom.workspace.getTextEditors()) {
         const editorView = atom.views.getView(textEditor);
         // 'jumpy-jump-mode is for keymaps and utilized by tests
@@ -165,7 +197,7 @@ const labeler = function (env) {
             else {
                 const lineContents = textEditor.lineTextForScreenRow(lineNumber);
                 let word;
-                while ((word = env.settings.wordsPattern.exec(lineContents)) != null) {
+                while ((word = regex.exec(lineContents)) != null) {
                     const column = word.index;
                     // Do not do anything... markers etc.
                     // if the columns are out of bounds...
@@ -175,10 +207,16 @@ const labeler = function (env) {
                         label.textEditor = textEditor;
                         label.lineNumber = lineNumber;
                         label.column = column;
-                        labels.push(label);
+                        // support for snake & kebab case
+                        if (adjustPosition) {
+                            labels.push(...adjustPosition(word, label));
+                        }
+                        else {
+                            labels.push(label);
+                        }
                     }
                     // prevent infinite loop with, for example /^$/.test('')
-                    if (lineContents.length === 0) {
+                    if (lineContents.length === 0 || word[0].length === 0) {
                         break;
                     }
                 }

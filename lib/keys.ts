@@ -26,21 +26,14 @@ const KeySet = (combos: string[]): KeySet => {
 const $$$ = fn => fn()
 
 const AlternateKeySet = $$$(() => {
-  const sum = (a, b) => a + b
-  const multiplyLengths = ([left, right]) => left.length * right.length
-  const calcPairsLength = pairs => pairs
-    .map(multiplyLengths)
-    .reduce(sum, 0)
   const upper = (keys: string[]): string[] => keys.map(key => key.toUpperCase())
   const lower = (keys: string[]): string[] => keys.map(key => key.toLowerCase())
 
   const hashSettings = ({customKeysLeft, customKeysRight}) =>
     `${String(customKeysLeft)} | ${String(customKeysRight)}`
 
-  let pairsByPreferenceOrder: [string[], string[]][][]
-  let pairsLength
-  let allPairs
   let lastSettingsHash = null
+  let allCombos: string[]
 
   const refreshPairs = settings => {
     const currentHash = hashSettings(settings)
@@ -49,49 +42,26 @@ const AlternateKeySet = $$$(() => {
     } else {
       lastSettingsHash = currentHash
     }
-
     const {customKeysLeft, customKeysRight} = settings
-    const leftLC: string[] = lower(customKeysLeft)
-    const rightLC: string[] = lower(customKeysRight)
+    const leftLC = lower(customKeysLeft)
+    const rightLC = lower(customKeysRight)
     const leftUC = upper(leftLC)
     const rightUC = upper(rightLC)
-
-    pairsByPreferenceOrder = [
-      [
-        [leftLC, rightLC],
-        [rightLC, leftLC],
-      ],
-      // leftLC+leftLC is before best combos leftLC+rightLC & rightLC+leftLC
-      // because we suppose (hope) that interesting content will be roughly
-      // in the middle of the editor, and (2) that leftLC+left
-      [
-        [leftLC, leftLC],
-        [leftLC, rightLC],
-        [rightLC, leftLC],
-        [rightLC, rightLC],
-      ],
-      [
-        [leftLC, leftLC],
-        [leftLC, rightLC],
-        [rightLC, leftLC],
-        [rightLC, rightLC],
-        [leftLC, rightUC],
-        [rightLC, leftUC],
-        [leftUC, rightLC],
-        [rightUC, leftLC],
-        [leftUC, rightUC],
-        [rightUC, leftUC],
-        [leftUC, leftUC],
-        [rightUC, rightUC],
-      ],
+    const pairs: [string[], string[]][] = [
+      [leftLC, rightLC],
+      [rightLC, leftLC],
+      [leftLC, leftLC],
+      [rightLC, rightLC],
+      [leftLC, rightUC],
+      [rightLC, leftUC],
+      [leftUC, rightLC],
+      [rightUC, leftLC],
+      [leftUC, rightUC],
+      [rightUC, leftUC],
+      [leftUC, leftUC],
+      [rightUC, rightUC],
     ]
-    pairsLength = pairsByPreferenceOrder.map(calcPairsLength)
-    allPairs = pairsByPreferenceOrder[pairsByPreferenceOrder.length - 1]
-  }
-
-  const pickPairs = n => {
-    const bestIndex = pairsLength.findIndex(l => n <= l)
-    return pairsByPreferenceOrder[bestIndex] || allPairs
+    allCombos = generateCombos(pairs)
   }
 
   const generateCombos = (pairs: [string[], string[]][]): string[] => {
@@ -105,8 +75,7 @@ const AlternateKeySet = $$$(() => {
   return (settings) => {
     const assignKeyLabel = (n: number) => {
       refreshPairs(settings)
-      const pairs = pickPairs(n)
-      const combos = generateCombos(pairs)
+      const combos = allCombos.slice(0, n)
       return o => {
         o.keyLabel = combos.shift()
         return o

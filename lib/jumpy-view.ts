@@ -122,19 +122,23 @@ export default class JumpyView {
             addJumpModeClasses(treeView[0]);
           }
 
-          const labellers = [
-            getWordLabels,
+          const wordLabels = getWordLabels(environment)
+          const otherLabellers = [
             getSettingsLabels,
             getTreeViewLabels,
             getTabLabels,
           ]
-
-          let allLabels = labellers
+          const otherLabels = otherLabellers
             .map(getLabels => getLabels(environment))
             .reduce(concatAll, [])
 
+          let allLabels = [
+            ...wordLabels,
+            ...otherLabels,
+          ]
+
           allLabels = allLabels
-            .map(keys.assignKeyLabel(allLabels.length))
+            .map(keys.assignKeyLabel(allLabels.length, wordLabels.length))
             // exclude labels with no assigned keys
             .filter(hasKeyLabel)
 

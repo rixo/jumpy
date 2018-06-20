@@ -24,6 +24,7 @@ const AlternateKeySet = $$$(() => {
     const hashSettings = ({ customKeysLeft, customKeysRight }) => `${String(customKeysLeft)} | ${String(customKeysRight)}`;
     let lastSettingsHash = null;
     let allCombos;
+    let bestCombos;
     const refreshPairs = settings => {
         const currentHash = hashSettings(settings);
         if (currentHash === lastSettingsHash) {
@@ -38,8 +39,6 @@ const AlternateKeySet = $$$(() => {
         const leftUC = upper(leftLC);
         const rightUC = upper(rightLC);
         const pairs = [
-            [leftLC, rightLC],
-            [rightLC, leftLC],
             [leftLC, leftLC],
             [rightLC, rightLC],
             [leftLC, rightUC],
@@ -51,7 +50,12 @@ const AlternateKeySet = $$$(() => {
             [leftUC, leftUC],
             [rightUC, rightUC],
         ];
+        const bestPairs = [
+            [leftLC, rightLC],
+            [rightLC, leftLC],
+        ];
         allCombos = generateCombos(pairs);
+        bestCombos = generateCombos(bestPairs);
     };
     const generateCombos = (pairs) => {
         const combos = pairs
@@ -60,10 +64,23 @@ const AlternateKeySet = $$$(() => {
             .reduce(concatAll, []); // ['', ...]
         return combos;
     };
+    // tries to position best shortcuts in the middle of the editor
+    const getOptimalCombos = (n, nWords) => {
+        const missingBestCombos = Math.max(0, nWords - bestCombos.length);
+        const editorPre = Math.ceil(missingBestCombos / 2);
+        const editorPost = editorPre + bestCombos.length;
+        const remaining = n - editorPost;
+        const combos = [
+            ...allCombos.slice(0, editorPre),
+            ...bestCombos,
+            ...allCombos.slice(editorPre, editorPre + remaining)
+        ];
+        return combos;
+    };
     return (settings) => {
-        const assignKeyLabel = (n) => {
+        const assignKeyLabel = (n, nWords) => {
             refreshPairs(settings);
-            const combos = allCombos.slice(0, n);
+            const combos = getOptimalCombos(n, nWords);
             return o => {
                 o.keyLabel = combos.shift();
                 return o;

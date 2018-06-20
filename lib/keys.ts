@@ -34,6 +34,7 @@ const AlternateKeySet = $$$(() => {
 
   let lastSettingsHash = null
   let allCombos: string[]
+  let bestCombos: string[]
 
   const refreshPairs = settings => {
     const currentHash = hashSettings(settings)
@@ -48,8 +49,6 @@ const AlternateKeySet = $$$(() => {
     const leftUC = upper(leftLC)
     const rightUC = upper(rightLC)
     const pairs: [string[], string[]][] = [
-      [leftLC, rightLC],
-      [rightLC, leftLC],
       [leftLC, leftLC],
       [rightLC, rightLC],
       [leftLC, rightUC],
@@ -61,7 +60,12 @@ const AlternateKeySet = $$$(() => {
       [leftUC, leftUC],
       [rightUC, rightUC],
     ]
+    const bestPairs: [string[], string[]][] = [
+      [leftLC, rightLC],
+      [rightLC, leftLC],
+    ]
     allCombos = generateCombos(pairs)
+    bestCombos = generateCombos(bestPairs)
   }
 
   const generateCombos = (pairs: [string[], string[]][]): string[] => {
@@ -72,10 +76,24 @@ const AlternateKeySet = $$$(() => {
     return combos
   }
 
+  // tries to position best shortcuts in the middle of the editor
+  const getOptimalCombos = (n: number, nWords: number) => {
+    const missingBestCombos = Math.max(0, nWords - bestCombos.length)
+    const editorPre = Math.ceil(missingBestCombos / 2)
+    const editorPost = editorPre + bestCombos.length
+    const remaining = n - editorPost
+    const combos = [
+      ...allCombos.slice(0, editorPre),
+      ...bestCombos,
+      ...allCombos.slice(editorPre, editorPre + remaining)
+    ]
+    return combos
+  }
+
   return (settings) => {
-    const assignKeyLabel = (n: number) => {
+    const assignKeyLabel = (n: number, nWords: number) => {
       refreshPairs(settings)
-      const combos = allCombos.slice(0, n)
+      const combos = getOptimalCombos(n, nWords)
       return o => {
         o.keyLabel = combos.shift()
         return o

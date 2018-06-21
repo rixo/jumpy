@@ -348,7 +348,9 @@ export default class JumpyView {
       useEditorFontFamily: atom.config.get('jumpy.useEditorFontFamily'),
       // TODO config (but the best config should probably be a list of
       //      possible built-in regex to choose from)
-      useBuiltInRegexMatchAllTheThings: true,
+      useBuiltInRegexMatchAllTheThings: atom.config.get(
+        'jumpy.useBuiltInRegexMatchAllTheThings'
+      ) !== false,
       settingsTargetSelectors: [ // TODO config
         'a',
         'button:not([tabIndex="-1"])',

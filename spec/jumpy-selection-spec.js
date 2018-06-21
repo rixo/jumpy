@@ -10,6 +10,9 @@ fdescribe('jumpy visual mode selection', () => {
   let editor
 
   const mockVisualMode = () => {
+    if (!editor) {
+      throw new Error('Failed to find TextEditor')
+    }
     editor.element.classList.add('visual-mode')
   }
 
@@ -35,6 +38,7 @@ fdescribe('jumpy visual mode selection', () => {
   const jump = (row, col, callback) => {
     const {element} = atom.workspace.getActiveTextEditor()
     atom.config.set('jumpy.matchPattern', '.')
+    atom.config.set('jumpy.useBuiltInRegexMatchAllTheThings', false)
     const promise = atom.commands.dispatch(element, 'jumpy:toggle').then(() => {
       const {jumpyView: {currentLabels, fsm}} = jumpy
       const label = currentLabels.find(

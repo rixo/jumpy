@@ -355,7 +355,10 @@ export default class JumpyView {
         'input:not([tabIndex="-1"])',
         'select',
         'atom-text-editor',
-        '.sub-section .package-card',
+        // we can't use .package-card selector directly because it
+        // matches the (unclickable) card in top of package detail
+        '.sub-section .package-card', // "Packages" section
+        '.section.packages .package-card', // "Installed" section
         '.sub-section-heading.has-items$right',
         '.repo-link',
       ],

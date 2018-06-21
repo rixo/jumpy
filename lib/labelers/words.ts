@@ -6,7 +6,7 @@ import { addJumpModeClasses } from '../viewHelpers';
 import { Point, Range, TextEditor as TextEditorBase } from 'atom';
 
 // reloads regex implem without having to restart Atom
-const DEBUG_REGEX = false
+const DEBUG_REGEX = true
 
 interface TextEditor extends TextEditorBase {
   // accessing the private member directly because it is used in the

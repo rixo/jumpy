@@ -5,7 +5,7 @@ const _ = require("lodash");
 const viewHelpers_1 = require("../viewHelpers");
 const atom_1 = require("atom");
 // reloads regex implem without having to restart Atom
-const DEBUG_REGEX = false;
+const DEBUG_REGEX = true;
 const $$$ = fn => fn();
 function getVisibleColumnRange(editorView) {
     const charWidth = editorView.getDefaultCharacterWidth();

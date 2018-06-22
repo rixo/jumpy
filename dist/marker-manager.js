@@ -1,55 +1,29 @@
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// less precise is way faster... remain to see if it can be
-// buggy in some cases
-// TODO config maybe?
-const USE_PRECISE_LOCATOR = false;
-const createTextEditorLocatorDom = (editor) => {
+const createTextEditorLocator = (editor) => {
     const editorEl = atom.views.getView(editor);
     const charWidth = editorEl.getBaseCharacterWidth();
-    // const lineRects: {[index: number]: ClientRect|null} = {}
     const lineRects = {};
     return (row, col) => {
-        if (lineRects[row] === undefined) {
+        let lineRect = lineRects[row];
+        if (lineRect === undefined) {
             const lineEl = editorEl.querySelector(`.line[data-screen-row="${row}"]`);
-            lineRects[row] = lineEl
+            lineRect = lineEl
                 ? lineEl.getBoundingClientRect()
                 : null;
+            lineRects[row] = lineRect;
         }
-        const lineRect = lineRects[row];
         if (lineRect === null) {
             return null;
         }
+        const { top, left } = lineRect;
         return {
-            left: lineRect.left + col * charWidth + 'px',
-            top: lineRect.top + 'px',
+            left: left + col * charWidth + 'px',
+            top: top + 'px',
         };
     };
 };
-const createTextEditorLocatorLineHeight = (editor) => {
-    const editorEl = atom.views.getView(editor);
-    // This one is prefered because it is "documented" (it appears
-    // in atom's d.ts)
-    const charWidth = editorEl.getBaseCharacterWidth();
-    // const charWidth = editor.getDefaultCharWidth()
-    const linesEl = editorEl.querySelector('.lines');
-    if (!linesEl) {
-        throw new Error('Failed to find lines element (atom internals changed?)');
-    }
-    const linesRect = linesEl.getBoundingClientRect();
-    const { left: linesLeft, top: linesTop } = linesRect;
-    const lineHeight = editor.getLineHeightInPixels();
-    return (row, col) => {
-        return {
-            left: linesLeft + col * charWidth + 'px',
-            top: linesTop + row * lineHeight + 'px',
-        };
-    };
-};
-const createTextEditorLocator = USE_PRECISE_LOCATOR
-    ? createTextEditorLocatorDom
-    : createTextEditorLocatorLineHeight;
 exports.default = (settings) => {
     const { theme, fontSize, allUppercase, hideMatchedChars, useEditorFontFamily, } = settings;
     // create maker layer element
@@ -83,7 +57,7 @@ exports.default = (settings) => {
         let locator = locators[id];
         if (!locator) {
             locator = createTextEditorLocator(editor);
-            locator[id] = locator;
+            locators[id] = locator;
         }
         return locator(row, col);
     };

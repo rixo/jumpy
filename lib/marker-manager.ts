@@ -2,11 +2,6 @@
 
 import {TextEditor} from 'atom'
 
-// less precise is way faster... remain to see if it can be
-// buggy in some cases
-// TODO config maybe?
-const USE_PRECISE_LOCATOR = false
-
 export interface MarkerManager {
   addMarker: (
     element: HTMLElement,
@@ -15,7 +10,7 @@ export interface MarkerManager {
   ) => void
   addEditorMarker: (
     editor: TextEditor,
-    el: HTMLElement,
+    element: HTMLElement,
     row: number,
     col: number,
   ) => void,
@@ -28,55 +23,31 @@ type TextEditorLocator = (row: number, col: number) => ({
   top: string,
 }) | null
 
-const createTextEditorLocatorDom = (editor: TextEditor): TextEditorLocator => {
+const createTextEditorLocator = (editor: TextEditor): TextEditorLocator => {
   const editorEl = atom.views.getView(editor)
   const charWidth = editorEl.getBaseCharacterWidth()
-  // const lineRects: {[index: number]: ClientRect|null} = {}
   const lineRects: {[index: number]: {top: number, left: number}|null} = {}
   return (row: number, col: number) => {
-    if (lineRects[row] === undefined) {
+    let lineRect = lineRects[row]
+    if (lineRect === undefined) {
       const lineEl = editorEl.querySelector(
         `.line[data-screen-row="${row}"]`
       )
-      lineRects[row] = lineEl
+      lineRect = lineEl
         ? lineEl.getBoundingClientRect()
         : null
+      lineRects[row] = lineRect
     }
-    const lineRect = lineRects[row]
     if (lineRect === null) {
       return null
     }
+    const {top, left} = lineRect
     return {
-      left: lineRect.left + col * charWidth + 'px',
-      top: lineRect.top + 'px',
+      left: left + col * charWidth + 'px',
+      top: top + 'px',
     }
   }
 }
-
-const createTextEditorLocatorLineHeight = (editor: TextEditor): TextEditorLocator => {
-  const editorEl = atom.views.getView(editor)
-  // This one is prefered because it is "documented" (it appears
-  // in atom's d.ts)
-  const charWidth = editorEl.getBaseCharacterWidth()
-  // const charWidth = editor.getDefaultCharWidth()
-  const linesEl = editorEl.querySelector('.lines')
-  if (!linesEl) {
-    throw new Error('Failed to find lines element (atom internals changed?)')
-  }
-  const linesRect = linesEl.getBoundingClientRect()
-  const {left: linesLeft, top: linesTop} = linesRect
-  const lineHeight = editor.getLineHeightInPixels()
-  return (row: number, col: number) => {
-    return {
-      left: linesLeft + col * charWidth + 'px',
-      top: linesTop + row * lineHeight + 'px',
-    }
-  }
-}
-
-const createTextEditorLocator = USE_PRECISE_LOCATOR
-  ? createTextEditorLocatorDom
-  : createTextEditorLocatorLineHeight
 
 export default (settings): MarkerManager => {
   const {
@@ -115,10 +86,10 @@ export default (settings): MarkerManager => {
   const locators = {}
   const getCoordsInEditor = (editor: TextEditor, row: number, col: number) => {
     const id = editor.id
-    let locator = locators[id]
+    let locator: TextEditorLocator = locators[id]
     if (!locator) {
       locator = createTextEditorLocator(editor)
-      locator[id] = locator
+      locators[id] = locator
     }
     return locator(row, col)
   }

@@ -105,6 +105,7 @@ class JumpyView {
                     ];
                     allLabels = allLabels
                         .map(keys.assignKeyLabel(allLabels.length, wordLabels.length))
+                        // exclude labels with no assigned keys
                         .filter(hasKeyLabel);
                     // render
                     const isTruthy = x => !!x;

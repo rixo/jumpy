@@ -1,15 +1,18 @@
 'use babel'
 
 import {TextEditor} from 'atom'
-import {addMarker} from './label-interface'
 
 // less precise is way faster... remain to see if it can be
 // buggy in some cases
 // TODO config maybe?
 const USE_PRECISE_LOCATOR = false
 
-interface MarkerManager {
-  addMarker: addMarker
+export interface MarkerManager {
+  addMarker: (
+    element: HTMLElement,
+    x: number | Object,
+    y?: number,
+  ) => void
   addEditorMarker: (
     editor: TextEditor,
     el: HTMLElement,

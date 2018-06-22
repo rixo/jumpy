@@ -1,7 +1,10 @@
 'use babel';
 
 import * as _ from 'lodash';
-import {KeySet} from './label-interface'
+
+interface KeySet {
+  assignKeyLabel(n: number): (o: object) => object
+}
 
 export const getKeySet = settings => settings.preferAlternateHands
   ? AlternateKeySet(settings)

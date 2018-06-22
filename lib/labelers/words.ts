@@ -37,16 +37,16 @@ function isVisible(element) {
 }
 
 const selectVisualMode = (editor: TextEditor, destination: Point) => {
-  const cursorPosition = editor.getCursorScreenPosition()
-  const {row: cursorRow, column: cursorCol} = cursorPosition
   const {row: targetRow, column: targetCol} = destination
-  const isJumpBefore = cursorRow > targetRow
-    || cursorRow === targetRow && cursorCol > targetCol
   const selection = editor.getLastSelection()
   if (!selection) {
     return
   }
-  const {start, end} = selection.getBufferRange()
+  const {start, end} = selection.getScreenRange()
+  const origin = selection.isReversed() ? end : start
+  const {row: originRow, column: originCol} = origin
+  const isJumpBefore = targetRow < originRow
+    || targetRow === originRow && targetCol < originCol
   if (isJumpBefore) {
     if (selection.getText().length === 1) {
       editor.setSelectedScreenRange([destination, end], {reversed: true})
@@ -63,7 +63,7 @@ const selectVisualMode = (editor: TextEditor, destination: Point) => {
       editor.setSelectedScreenRange([end, destination], {reversed: false})
     } else {
       destination.column++
-      editor.selectToScreenPosition(destination)
+      editor.setSelectedScreenRange([start, destination], {reversed: false})
     }
   }
 }

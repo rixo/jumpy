@@ -130,7 +130,9 @@ describe('jumpy visual mode selection', () => {
   // 0
   // 1       t  h  i  s     i  s     s  o  m  e     e  x  a  m  p  l  e
   // 2       m  u  l  t  i  l  i  n  e     t  e  x  t
-  // 3
+  // 3 w  i  t  h
+  // 4    m  o  r  e
+  // 5 l  i  n  e  s
   //
   describe('in vim visual mode', () => {
     beforeEach(() => {
@@ -192,6 +194,12 @@ describe('jumpy visual mode selection', () => {
             expect(caret).toEqual([1, 17])
           })
         })
+        it('selects when coming back between origin and a later row', () => {
+          return selectRight([1, 7], [3, 3]).jump(2, 6, (text, caret) => {
+            expect(text).toBe('is some example\n  multi')
+            expect(caret).toEqual([2, 7])
+          })
+        })
       })
     })
     describe('when starting from left of existing selection', () => {
@@ -206,6 +214,12 @@ describe('jumpy visual mode selection', () => {
           return selectLeft([1, 17], [1, 19]).jump(2, 4, (text, caret) => {
             expect(text).toBe('ple\n  mul')
             expect(caret).toEqual([2, 5])
+          })
+        })
+        it('selects when coming back from upper selection', () => {
+          return selectLeft([1, 15], [4, 4]).jump(3, 2, (text, caret) => {
+            expect(text).toBe('th\n  mor')
+            expect(caret).toEqual([3, 2])
           })
         })
       })

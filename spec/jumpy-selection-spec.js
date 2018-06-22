@@ -3,17 +3,46 @@
 const code = `
   this is some example
   multiline text
+with
+  more
+lines
 `
 
 describe('jumpy visual mode selection', () => {
   let jumpy
   let editor
+  // vim emulation is not top notch yet
+  let hasVim = false
+
+  beforeEach(async () => {
+    try {
+      await atom.packages.activatePackage('vim-mode-plus')
+      hasVim = true
+    } catch (err) {}
+  })
 
   const mockVisualMode = () => {
     if (!editor) {
       throw new Error('Failed to find TextEditor')
     }
     editor.element.classList.add('visual-mode')
+  }
+
+  const dispatch = cmd => atom.commands.dispatch(editor.element, cmd)
+
+  const dispatchVim = async (count, cmd) => {
+    if (!hasVim) {
+      pending('vim-mode-plus is not available')
+      return
+    }
+    if (cmd === undefined) {
+      cmd = count
+    } else {
+      for (const char of String(count)) {
+        await dispatch(`vim-mode-plus:set-count-${char}`)
+      }
+    }
+    return dispatch('vim-mode-plus:' + cmd)
   }
 
   const selectChar = (row, col) => {
@@ -32,6 +61,19 @@ describe('jumpy visual mode selection', () => {
   const selectLeft = (from, [toRow, toCol]) => {
     editor.setSelectedBufferRange([from, [toRow, toCol + 1]], {reversed: true})
     mockVisualMode()
+    return {jump}
+  }
+
+  const selectLinewise = async (fromRow, toPoint) => {
+    editor.setCursorBufferPosition(toPoint)
+    editor.setSelectedBufferRange([
+      [fromRow, 0],
+      editor.clipBufferPosition([toPoint[0], Number.MAX_SAFE_INTEGER]),
+    ])
+    await dispatchVim(fromRow + 1, 'move-to-first-line')
+    await dispatchVim('activate-linewise-visual-mode')
+    await dispatchVim(toPoint[0] + 1, 'move-to-first-line')
+    await dispatchVim(toPoint[1] + 1, 'move-to-column')
     return {jump}
   }
 
@@ -88,6 +130,7 @@ describe('jumpy visual mode selection', () => {
   // 0
   // 1       t  h  i  s     i  s     s  o  m  e     e  x  a  m  p  l  e
   // 2       m  u  l  t  i  l  i  n  e     t  e  x  t
+  // 3
   //
   describe('in vim visual mode', () => {
     beforeEach(() => {
@@ -179,6 +222,156 @@ describe('jumpy visual mode selection', () => {
             expect(caret).toEqual([1, 12])
           })
         })
+      })
+    })
+  })
+
+  //////////////////////////////////////////////////////////////////////////////
+  //   0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22
+  // 0
+  // 1       t  h  i  s     i  s     s  o  m  e     e  x  a  m  p  l  e
+  // 2       m  u  l  t  i  l  i  n  e     t  e  x  t
+  // 3 w  i  t  h
+  // 4    m  o  r  e
+  // 5 l  i  n  e  s
+  // 6
+  //
+  describe('in linewise mode', () => {
+    const tests = [{
+      title: 'selects on the same line before',
+      selectFromRow: 2,
+      startPoint: [2, 3],
+      jumps: [[2, 3]],
+      expect: [2, 2],
+    }, {
+      title: 'selects on the same line after',
+      selectFromRow: 2,
+      startPoint: [2, 3],
+      jumps: [[2, 1]],
+      expect: [2, 2],
+    }, {
+      title: 'selects on the line before',
+      selectFromRow: 2,
+      startPoint: [2, 6],
+      jumps: [[1, 4]],
+      expect: [1, 2],
+    }, {
+      title: 'selects two lines before',
+      selectFromRow: 4,
+      startPoint: [4, 3],
+      jumps: [[2, 7]],
+      expect: [2, 4],
+    }, {
+      title: 'selects two lines before then one before',
+      selectFromRow: 4,
+      startPoint: [4, 5],
+      jumps: [[2, 6], [1, 0]],
+      expect: [1, 4],
+    }, {
+      title: 'selects 3 before then 2 after',
+      selectFromRow: 5,
+      startPoint: [4, 3],
+      jumps: [[1, 2], [3, 3]],
+      expect: [3, 4],
+    }, {
+      title: 'selects on the line after',
+      selectFromRow: 3,
+      startPoint: [3, 2],
+      jumps: [[4, 4]],
+      expect: [3, 4],
+    }, {
+      title: 'selects two line after',
+      selectFromRow: 3,
+      startPoint: [3, 1],
+      jumps: [[5, 2]],
+      expect: [3, 5],
+    }, {
+      title: 'selects two lines after then one after',
+      selectFromRow: 1,
+      startPoint: [1, 7],
+      jumps: [[3, 0], [4, 1]],
+      expect: [1, 4],
+    }, {
+      title: 'selects 3 after then 2 before',
+      selectFromRow: 2,
+      startPoint: [2, 0],
+      jumps: [[5, 3], [3, 3]],
+      expect: [2, 3],
+    }, {
+      title: 'selects 2 before then 4 after',
+      selectFromRow: 3,
+      startPoint: [3, 1],
+      jumps: [[1, 1], [5, 3]],
+      expect: [3, 5],
+    }, {
+      title: 'selects 4 before then 2 after',
+      selectFromRow: 5,
+      startPoint: [5, 2],
+      jumps: [[1, 1], [3, 1]],
+      expect: [3, 5],
+    }, {
+      title: 'selects 2 after then on the same',
+      selectFromRow: 2,
+      startPoint: [2, 10],
+      jumps: [[4, 0], [2, 8]],
+      expect: [2, 2],
+    }, {
+      title: 'selects 2 before then on the same',
+      selectFromRow: 3,
+      startPoint: [3, 1],
+      jumps: [[1, 11], [3, 3]],
+      expect: [3, 3],
+    }]
+
+    const lines = ([first, last]) => code
+        .split('\n')
+        .slice(first, last + 1)
+        .map(row => row + '\n')
+        .join('')
+
+    tests.forEach(({
+      focus,
+      skip,
+      title,
+      selectFromRow,
+      startPoint,
+      jumps,
+      expect: expected,
+    }) => {
+      const cursorTitle = `${title} and fix column`
+      if (!expected) {
+        xit(title)
+        xit(cursorTitle)
+        return
+      }
+      const lastJump = jumps[jumps.length - 1]
+      const run = async () => {
+        await selectLinewise(selectFromRow, startPoint)
+        for (const jp of jumps.slice(0, -1)) {
+          await jump(...jp)
+        }
+        const result = {}
+        await jump(...lastJump, (text, cursor) => {
+          result.text = text
+          result.cursor = cursor
+        })
+        return result
+      }
+
+      const fn = focus ? ffit : (skip ? xit : it)
+      fn(title, async () => {
+        const {text} = await run()
+        expect(text).toBe(lines(expected))
+      })
+
+      fn(cursorTitle, async () => {
+        await run()
+        // needed because during visual mode, editor's cursor
+        // position is not reliable (and maybe in order to queue
+        // after the commands dispatched during the jump)
+        await dispatchVim('create-persistent-selection')
+        const cursor = editor.getCursorBufferPosition()
+        expect(cursor).toEqual(lastJump)
       })
     })
   })

@@ -68,6 +68,71 @@ const selectVisualMode = (editor: TextEditor, destination: Point) => {
   }
 }
 
+const selectLineWise = (editor: TextEditor, destination: Point) => {
+  const selection = editor.getLastSelection()
+  if (!selection) {
+    return
+  }
+  const {start, end} = selection.getBufferRange()
+  const isSingleLine = start.row === end.row - 1 && end.column === 0
+  const origin = isSingleLine || !selection.isReversed() ? start : end
+  const reversed = destination.row < origin.row
+  if (reversed) {
+    const range: [[number, number], [number, number]] =
+      [[destination.row, 0], [origin.row, 0]]
+    if (origin === start) {
+      range[1][0]++
+    }
+    selection.setBufferRange(range, <any> {
+      autoscroll: false,
+      preserveFolds: true,
+      reversed,
+    })
+  } else {
+    const range: [Point, [number, number]] = [origin, [destination.row + 1, 0]]
+    if (origin === end) {
+      range[0] = Object.assign(origin.copy(), {
+        row: origin.row - 1,
+      })
+    }
+    selection.setBufferRange(range, <any> {
+      autoscroll: false,
+      preserveFolds: true,
+      reversed,
+    })
+  }
+
+  return fixColumn().catch(err => console.error(
+    'Failed to fix vim-mode-plus linewise cursor', err
+  ))
+
+  // Well... This surely could be done more cleanly, but I
+  // didn't find how vim-mode-plus manages to put the cursor
+  // in the middle of the active selection (as opposed to one
+  // of its end), without destroying said selection.
+  //
+  // What I've discovered however is that cursor position
+  // reported by atom during visual linewise mode is not
+  // correct, so vim surely uses some kind of curosr of its
+  // own.
+  //
+  // FIXME Get help from vim-mode-plus, maybe?
+  function fixColumn() {
+    const editorEl = atom.views.getView(editor)
+    const promises = []
+    const dispatch = cmd => {
+      const p = atom.commands.dispatch(editorEl, cmd)
+      promises.push(p)
+    }
+    dispatch('vim-mode-plus:move-to-beginning-of-line')
+    for (const char of String(destination.column + 1)) {
+      dispatch(`vim-mode-plus:set-count-${char}`)
+    }
+    dispatch('vim-mode-plus:move-to-column')
+    return Promise.all(promises)
+  }
+}
+
 class WordLabel implements Label {
     // TODO: check I need these defined again?
     keyLabel: string | undefined;
@@ -129,29 +194,31 @@ class WordLabel implements Label {
         // dispatch a bogus command just before moving cursor for interop.
         atom.commands.dispatch(editorView, 'jumpy:jump')
 
-        // TODO: pretty sure this can't be useful...anymore
-        // I think it had somethign to do with the observers etc.
-        // Prevent other editors from jumping cursors as well
-        // TODO: make a test for this if return
-        if (currentEditor.id !== this.textEditor.id) {
-            return;
-        }
-
         const pane = atom.workspace.paneForItem(currentEditor);
         pane.activate();
 
         // isVisualMode is for vim-mode or vim-mode-plus:
         const isVisualMode = editorView.classList.contains('visual-mode');
-        // isSelected is for regular selection in atom or in insert-mode in vim
-        const isSelected = (currentEditor.getSelections().length === 1 &&
-            currentEditor.getSelectedText() !== '');
         const position = new Point(this.lineNumber, this.column);
         if (isVisualMode) {
-            selectVisualMode(currentEditor, position)
-        } else if (isSelected) {
-            currentEditor.selectToScreenPosition(position);
+            const isLineWise = editorView.classList.contains('linewise');
+            if (isLineWise) {
+              selectLineWise(currentEditor, position)
+                .catch(err => {
+                  console.error('Failed to select linewise', err)
+                })
+            } else {
+              selectVisualMode(currentEditor, position)
+            }
         } else {
+          // isSelected is for regular selection in atom or in insert-mode in vim
+          const isSelected = currentEditor.getSelections().length === 1
+            && currentEditor.getSelectedText() !== '';
+          if (isSelected) {
+            currentEditor.selectToScreenPosition(position);
+          } else {
             currentEditor.setCursorScreenPosition(position);
+          }
         }
     }
 }
@@ -234,7 +301,8 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
                         label.textEditor = textEditor;
                         label.lineNumber = lineNumber;
                         label.column = column;
-                        // support for snake & kebab case
+                        // support for corner cases that cannot be handled by
+                        // regex alone
                         if (adjustPosition) {
                             labels.push(
                               ...adjustPosition(word, label)

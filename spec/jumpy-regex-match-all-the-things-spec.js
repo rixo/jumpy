@@ -148,9 +148,6 @@ describe('jumpy match all-the-things regex', () => {
       const pack = atom.packages.getActivePackage('jumpy')
       jumpy = pack.mainModule
       jumpy.jumpyView
-    // }).then(() => {
-    //   editor = atom.workspace.getActiveTextEditor()
-    //   editor.setText(code)
     })
   })
 
@@ -163,15 +160,4 @@ describe('jumpy match all-the-things regex', () => {
       fn(test.title, expectMatches(test))
     }
   })
-
-  // it('hyphens & underscores', expectMatches(
-  //   '__   __ _ _ __    __  _ __   __ _ _ __    __  _   _ _  _  ',
-  //   '|----+--||--||    |---| |____+__||__||    |___|   _ __ ___',
-  // ))
-
-  // tests(`
-  //   # camel-case
-  //   __   _ __   ___ __   ___  __ _  __ __   ____ __ __  __
-  //   iMatch iMatch() iMatch(arg1, arg2) iMatch(iArg, iArg2)
-  // `)
 })

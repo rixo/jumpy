@@ -1,0 +1,50 @@
+
+> hyphens
+__   __ _ _ __    __  _ _ ___ __ ___ __ _ _  _
+|----+--||--||    |---| ##-#--#- #-- #--- ----
+
+> pluses
+_   _  __ ___ __ _
++++++  |+ |++ #+++
+
+> underscores
+__   __ _ _ __    __  _   _ __ _ _ _ ___ __ ___ __ _
+|____+__||__||    |___|   _ __ ___ ##_#__#_ #__ #___
+
+> camelCase
+__   _ __   ___ __   ___  __ _  __ __   ____ __ __  __
+iMatch iMatch() iMatch(arg1, arg2) iMatch(iArg, iArg2)
+
+> camelCase 2
+__    _ ____  ___ __   _    ___ __   __  ____  _  _   _   _ +snakeMatchSeparator
+__    _ ____  ___ __   _    ___ __  _ _  ____  _  _   _   _ -snakeMatchSeparator
+iMatchToo("text", 'textInside', `TEXT_HERE`);  andAlsoCamel
+
+> snake_case
+_ __    __  _ _  _ _   _ ___ __ _ _ _    __   _ _ __    __   _ +snakeMatchSeparator
+__ _   _ _  _ _  _ _   _ _ __ _ _ _ _   _ _   _ __ _   _ _   _ -snakeMatchSeparator
+da_snake_case aaaa +++++ 1_22_333 daWeird_thing da_WEIRD_Thing
+
+> kebab-case
+_ __    __   __ _  _ __    __ _   __    __ _ {snakeMatchSeparator: true}
+__ _   _ _  _ _ _  __ _    __ _  _ _   _ _ _ {snakeMatchSeparator: false}
+da-kebab-case-too  OF_COURSE! some_MIXED_one
+
+> mixed camelCASE
+_    _  _ _       _ _    _   _    _ _   __ _ _   _ _ _
+innerHTML UPPERCASE InnerHTMLinside time2bed TIME42BED
+
+> with lessMatch
+_  _  _   _  _    _ _  ___   _ _   {lessMatch: true}
+__ _  _   __ _    _ __ ___   _ _   {lessMatch: false}
+// ////   /* /****/ */ #-####--#
+
+> double sign operators
+x_  _  _  +lessMatch
+__ __ __ -lessMatch
+++ -- **
+
+> well known symbols
+_ _  _  _  _  _     _  _  _   _ +lessMatch
+_ __ __ __ __ __    _  _  _   _ -lessMatch
+_ -> => <= <- !!    ++++  *****

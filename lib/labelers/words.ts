@@ -6,7 +6,7 @@ import { addJumpModeClasses } from '../viewHelpers';
 import { Point, Range, TextEditor as TextEditorBase } from 'atom';
 
 // reloads regex implem without having to restart Atom
-const DEBUG_REGEX = true
+const DEBUG_REGEX = false
 
 interface TextEditor extends TextEditorBase {
   // accessing the private member directly because it is used in the
@@ -240,6 +240,7 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
 
         const [ firstVisibleRow, lastVisibleRow ] = rows;
         // TODO: Right now there are issues with lastVisbleRow
+        // rixo: what issues?
         for (const lineNumber of _.range(firstVisibleRow, lastVisibleRow) /*excludes end value*/) {
             if (textEditor.isFoldedAtScreenRow(lineNumber)) {
                 const label = new WordLabel();

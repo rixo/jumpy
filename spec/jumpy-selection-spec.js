@@ -5,7 +5,7 @@ const code = `
   multiline text
 `
 
-fdescribe('jumpy visual mode selection', () => {
+describe('jumpy visual mode selection', () => {
   let jumpy
   let editor
 

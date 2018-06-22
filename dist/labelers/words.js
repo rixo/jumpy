@@ -5,7 +5,7 @@ const _ = require("lodash");
 const viewHelpers_1 = require("../viewHelpers");
 const atom_1 = require("atom");
 // reloads regex implem without having to restart Atom
-const DEBUG_REGEX = true;
+const DEBUG_REGEX = false;
 const $$$ = fn => fn();
 function getVisibleColumnRange(editorView) {
     const charWidth = editorView.getDefaultCharacterWidth();
@@ -185,6 +185,7 @@ const labeler = function (env) {
         }
         const [firstVisibleRow, lastVisibleRow] = rows;
         // TODO: Right now there are issues with lastVisbleRow
+        // rixo: what issues?
         for (const lineNumber of _.range(firstVisibleRow, lastVisibleRow) /*excludes end value*/) {
             if (textEditor.isFoldedAtScreenRow(lineNumber)) {
                 const label = new WordLabel();

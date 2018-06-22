@@ -44,7 +44,7 @@
     "@types/javascript-state-machine": "2.4.1",
     "@types/lodash": "4.14.109",
     "atom-jasmine3-test-runner": "^3.1.0",
-    "atom-mocha-test-runner": "^1.2.0",
+    "space-pen": "^5.1.2",
     "tslib": "^1.9.2",
     "typescript": "2.9.2"
   }

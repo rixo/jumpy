@@ -3,6 +3,11 @@
 import {TextEditor} from 'atom'
 import {addMarker} from './label-interface'
 
+// less precise is way faster... remain to see if it can be
+// buggy in some cases
+// TODO config maybe?
+const USE_PRECISE_LOCATOR = false
+
 interface MarkerManager {
   addMarker: addMarker
   addEditorMarker: (
@@ -20,13 +25,12 @@ type TextEditorLocator = (row: number, col: number) => ({
   top: string,
 })
 
-const createTextEditorLocator = (editor: TextEditor): TextEditorLocator => {
+const createTextEditorLocatorDom = (editor: TextEditor): TextEditorLocator => {
   const editorEl = atom.views.getView(editor)
   const charWidth = editorEl.getBaseCharacterWidth()
   const lineRects = []
   return (row: number, col: number) => {
     if (lineRects[row] === undefined) {
-      const editorEl = atom.views.getView(editor)
       const lineEl = editorEl.querySelector(
         `.line[data-screen-row="${row}"]`
       )
@@ -43,6 +47,28 @@ const createTextEditorLocator = (editor: TextEditor): TextEditorLocator => {
     }
   }
 }
+
+const createTextEditorLocatorLineHeight = (editor: TextEditor): TextEditorLocator => {
+  const editorEl = atom.views.getView(editor)
+  // This one is prefered because it is "documented" (it appears
+  // in atom's d.ts)
+  const charWidth = editorEl.getBaseCharacterWidth()
+  // const charWidth = editor.getDefaultCharWidth()
+  const linesEl = editorEl.querySelector('.lines')
+  const linesRect = linesEl.getBoundingClientRect()
+  const {left: linesLeft, top: linesTop} = linesRect
+  const lineHeight = editor.getLineHeightInPixels()
+  return (row: number, col: number) => {
+    return {
+      left: linesLeft + col * charWidth + 'px',
+      top: linesTop + row * lineHeight + 'px',
+    }
+  }
+}
+
+const createTextEditorLocator = USE_PRECISE_LOCATOR
+  ? createTextEditorLocatorDom
+  : createTextEditorLocatorLineHeight
 
 export default (settings): MarkerManager => {
   const {

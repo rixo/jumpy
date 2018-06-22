@@ -1,13 +1,16 @@
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const createTextEditorLocator = (editor) => {
+// less precise is way faster... remain to see if it can be
+// buggy in some cases
+// TODO config maybe?
+const USE_PRECISE_LOCATOR = false;
+const createTextEditorLocatorDom = (editor) => {
     const editorEl = atom.views.getView(editor);
     const charWidth = editorEl.getBaseCharacterWidth();
     const lineRects = [];
     return (row, col) => {
         if (lineRects[row] === undefined) {
-            const editorEl = atom.views.getView(editor);
             const lineEl = editorEl.querySelector(`.line[data-screen-row="${row}"]`);
             lineRects[row] = lineEl
                 ? lineEl.getBoundingClientRect()
@@ -22,6 +25,26 @@ const createTextEditorLocator = (editor) => {
         };
     };
 };
+const createTextEditorLocatorLineHeight = (editor) => {
+    const editorEl = atom.views.getView(editor);
+    // This one is prefered because it is "documented" (it appears
+    // in atom's d.ts)
+    const charWidth = editorEl.getBaseCharacterWidth();
+    // const charWidth = editor.getDefaultCharWidth()
+    const linesEl = editorEl.querySelector('.lines');
+    const linesRect = linesEl.getBoundingClientRect();
+    const { left: linesLeft, top: linesTop } = linesRect;
+    const lineHeight = editor.getLineHeightInPixels();
+    return (row, col) => {
+        return {
+            left: linesLeft + col * charWidth + 'px',
+            top: linesTop + row * lineHeight + 'px',
+        };
+    };
+};
+const createTextEditorLocator = USE_PRECISE_LOCATOR
+    ? createTextEditorLocatorDom
+    : createTextEditorLocatorLineHeight;
 exports.default = (settings) => {
     const { theme, fontSize, allUppercase, hideMatchedChars, useEditorFontFamily, } = settings;
     // create maker layer element

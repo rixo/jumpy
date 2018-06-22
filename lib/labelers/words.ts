@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { LabelEnvironment, Label, Labeler } from '../label-interface';
 import { addJumpModeClasses } from '../viewHelpers';
 import { Point, Range, TextEditor as TextEditorBase } from 'atom';
+import {createLabelElement} from './util'
 
 // reloads regex implem without having to restart Atom
 const DEBUG_REGEX = false
@@ -41,28 +42,6 @@ const majEnd = 'Z'.charCodeAt(0)
 const isMaj = k => {
   const charCode = k.charCodeAt(0)
   return charCode >= majStart && charCode <= majEnd
-}
-
-const createLabelElement = (
-  textEditor: TextEditor,
-  keyLabel: string,
-  settings: any,
-) => {
-  const labelElement = document.createElement('div')
-  labelElement.classList.add('jumpy-label') // For styling and tests
-  labelElement.classList.add('jumpy-label-editor') // For styling and tests
-  for (const k of keyLabel) {
-    const span = document.createElement('span')
-    span.textContent = k
-    span.classList.add('jumpy-key')
-    // TODO:rixo clean marker with
-    span.style.width = `${Math.max(5, textEditor.defaultCharWidth - 1)}px`
-    if (isMaj(k)) {
-      span.classList.add('uppercase')
-    }
-    labelElement.appendChild(span)
-  }
-  return labelElement
 }
 
 const selectVisualMode = (editor: TextEditor, destination: Point) => {
@@ -122,7 +101,8 @@ class WordLabel implements Label {
           markers: {addEditorMarker},
         }
       } = this;
-      const labelElement = createLabelElement(textEditor, keyLabel, settings)
+      const labelElement = createLabelElement(keyLabel, settings)
+      labelElement.classList.add('jumpy-label-editor') // For styling and tests
       addEditorMarker(textEditor, labelElement, lineNumber, column)
       this.element = labelElement;
       return this;

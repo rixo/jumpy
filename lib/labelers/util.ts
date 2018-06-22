@@ -24,7 +24,6 @@ export const createLabelElement = (
     }
     labelElement.appendChild(span)
   }
-  // labelElement.style.left = `${textEditor.defaultCharWidth * column}px`
   return labelElement
 }
 

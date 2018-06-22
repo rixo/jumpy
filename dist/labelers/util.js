@@ -21,7 +21,6 @@ exports.createLabelElement = (keyLabel, settings) => {
         }
         labelElement.appendChild(span);
     }
-    // labelElement.style.left = `${textEditor.defaultCharWidth * column}px`
     return labelElement;
 };
 exports.animateBeacon = (target, delay = false) => {

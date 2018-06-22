@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const viewHelpers_1 = require("../viewHelpers");
 const atom_1 = require("atom");
+const util_1 = require("./util");
 // reloads regex implem without having to restart Atom
 const DEBUG_REGEX = false;
 const $$$ = fn => fn();
@@ -27,23 +28,6 @@ const majEnd = 'Z'.charCodeAt(0);
 const isMaj = k => {
     const charCode = k.charCodeAt(0);
     return charCode >= majStart && charCode <= majEnd;
-};
-const createLabelElement = (textEditor, keyLabel, settings) => {
-    const labelElement = document.createElement('div');
-    labelElement.classList.add('jumpy-label'); // For styling and tests
-    labelElement.classList.add('jumpy-label-editor'); // For styling and tests
-    for (const k of keyLabel) {
-        const span = document.createElement('span');
-        span.textContent = k;
-        span.classList.add('jumpy-key');
-        // TODO:rixo clean marker with
-        span.style.width = `${Math.max(5, textEditor.defaultCharWidth - 1)}px`;
-        if (isMaj(k)) {
-            span.classList.add('uppercase');
-        }
-        labelElement.appendChild(span);
-    }
-    return labelElement;
 };
 const selectVisualMode = (editor, destination) => {
     const cursorPosition = editor.getCursorScreenPosition();
@@ -84,7 +68,8 @@ class WordLabel {
     destroy() { }
     drawLabel() {
         const { textEditor, lineNumber, column, keyLabel, env: { settings, markers: { addEditorMarker }, } } = this;
-        const labelElement = createLabelElement(textEditor, keyLabel, settings);
+        const labelElement = util_1.createLabelElement(keyLabel, settings);
+        labelElement.classList.add('jumpy-label-editor'); // For styling and tests
         addEditorMarker(textEditor, labelElement, lineNumber, column);
         this.element = labelElement;
         return this;

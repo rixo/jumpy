@@ -1,3 +1,4 @@
+import {TextEditor} from 'atom'
 
 export type addMarker = (
   element: HTMLElement,
@@ -6,8 +7,13 @@ export type addMarker = (
 ) => void
 
 interface MarkerManager {
-  addMarker: Function
-  addEditorMarker: Function
+  addMarker: addMarker
+  addEditorMarker: (
+    editor: TextEditor,
+    element: HTMLElement,
+    lineNumber: number,
+    column: number,
+  ) => void
 }
 
 export interface KeySet {

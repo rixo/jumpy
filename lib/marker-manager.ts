@@ -23,12 +23,13 @@ interface MarkerManager {
 type TextEditorLocator = (row: number, col: number) => ({
   left: string,
   top: string,
-})
+}) | null
 
 const createTextEditorLocatorDom = (editor: TextEditor): TextEditorLocator => {
   const editorEl = atom.views.getView(editor)
   const charWidth = editorEl.getBaseCharacterWidth()
-  const lineRects = []
+  // const lineRects: {[index: number]: ClientRect|null} = {}
+  const lineRects: {[index: number]: {top: number, left: number}|null} = {}
   return (row: number, col: number) => {
     if (lineRects[row] === undefined) {
       const lineEl = editorEl.querySelector(
@@ -38,12 +39,13 @@ const createTextEditorLocatorDom = (editor: TextEditor): TextEditorLocator => {
         ? lineEl.getBoundingClientRect()
         : null
     }
-    if (lineRects[row] === null) {
+    const lineRect = lineRects[row]
+    if (lineRect === null) {
       return null
     }
     return {
-      left: lineRects[row].left + col * charWidth + 'px',
-      top: lineRects[row].top + 'px',
+      left: lineRect.left + col * charWidth + 'px',
+      top: lineRect.top + 'px',
     }
   }
 }
@@ -55,6 +57,9 @@ const createTextEditorLocatorLineHeight = (editor: TextEditor): TextEditorLocato
   const charWidth = editorEl.getBaseCharacterWidth()
   // const charWidth = editor.getDefaultCharWidth()
   const linesEl = editorEl.querySelector('.lines')
+  if (!linesEl) {
+    throw new Error('Failed to find lines element (atom internals changed?)')
+  }
   const linesRect = linesEl.getBoundingClientRect()
   const {left: linesLeft, top: linesTop} = linesRect
   const lineHeight = editor.getLineHeightInPixels()

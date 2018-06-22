@@ -8,7 +8,8 @@ const USE_PRECISE_LOCATOR = false;
 const createTextEditorLocatorDom = (editor) => {
     const editorEl = atom.views.getView(editor);
     const charWidth = editorEl.getBaseCharacterWidth();
-    const lineRects = [];
+    // const lineRects: {[index: number]: ClientRect|null} = {}
+    const lineRects = {};
     return (row, col) => {
         if (lineRects[row] === undefined) {
             const lineEl = editorEl.querySelector(`.line[data-screen-row="${row}"]`);
@@ -16,12 +17,13 @@ const createTextEditorLocatorDom = (editor) => {
                 ? lineEl.getBoundingClientRect()
                 : null;
         }
-        if (lineRects[row] === null) {
+        const lineRect = lineRects[row];
+        if (lineRect === null) {
             return null;
         }
         return {
-            left: lineRects[row].left + col * charWidth + 'px',
-            top: lineRects[row].top + 'px',
+            left: lineRect.left + col * charWidth + 'px',
+            top: lineRect.top + 'px',
         };
     };
 };
@@ -32,6 +34,9 @@ const createTextEditorLocatorLineHeight = (editor) => {
     const charWidth = editorEl.getBaseCharacterWidth();
     // const charWidth = editor.getDefaultCharWidth()
     const linesEl = editorEl.querySelector('.lines');
+    if (!linesEl) {
+        throw new Error('Failed to find lines element (atom internals changed?)');
+    }
     const linesRect = linesEl.getBoundingClientRect();
     const { left: linesLeft, top: linesTop } = linesRect;
     const lineHeight = editor.getLineHeightInPixels();

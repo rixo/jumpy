@@ -37,8 +37,6 @@ type TextEditorLocator = (row: number, col: number) => ({
   top: string,
 }) | null
 
-const $$$ = fn => fn()
-
 const createLayerElement = (settings) => {
   const {
     theme,

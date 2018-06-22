@@ -3,7 +3,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const create_label_1 = require("./label-manager/create-label");
 const animate_beacon_1 = require("./label-manager/animate-beacon");
-const $$$ = fn => fn();
 const createLayerElement = (settings) => {
     const { theme, fontSize, allUppercase, hideMatchedChars, useEditorFontFamily, } = settings;
     const layer = document.createElement('div');

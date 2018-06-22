@@ -2,7 +2,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const atom_1 = require("atom");
-const util_1 = require("./util");
 let SettingsView;
 try {
     SettingsView = window.require('settings-view/lib/settings-view');
@@ -13,11 +12,11 @@ catch (err) {
 class TabLabel {
     destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, env: { settings, markers: { addMarker }, }, } = this;
-        this.element = util_1.createLabelElement(keyLabel, settings);
+        const { keyLabel, targetEl, env: { settings, labels: { createLabel, addLabel }, }, } = this;
+        this.element = createLabel(keyLabel, settings);
         this.element.classList.add('tab-label');
         const rect = targetEl.getBoundingClientRect();
-        addMarker(this.element, rect.left, rect.top);
+        addLabel(this.element, rect.left, rect.top);
         return this;
     }
     jump() {
@@ -26,7 +25,7 @@ class TabLabel {
         pane.activateItem(this.paneItem);
     }
     animateBeacon() {
-        util_1.animateBeacon(this.element, 0);
+        this.env.labels.animateBeacon(this.element, 0);
     }
 }
 const getPaneItemSelector = paneItem => {

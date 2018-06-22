@@ -1,7 +1,6 @@
 'use babel'
 
 import {LabelEnvironment, Label, Labeler} from '../label-interface'
-import {createLabelElement, animateBeacon} from './util'
 
 let TreeView = null
 try {
@@ -36,17 +35,17 @@ class TreeViewLabel implements Label {
       targetEl,
       env: {
         settings,
-        markers: {addMarker},
+        labels: {addLabel, createLabel},
       },
     } = this
-    this.element = createLabelElement(keyLabel, settings)
+    this.element = createLabel(keyLabel, settings)
     const rect = targetEl.getBoundingClientRect()
-    addMarker(this.element, rect.left, rect.top)
+    addLabel(this.element, rect.left, rect.top)
     return this
   }
 
   animateBeacon() {
-    animateBeacon(this.targetEl)
+    this.env.labels.animateBeacon(this.targetEl)
   }
 
   jump() {

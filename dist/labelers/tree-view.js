@@ -1,7 +1,6 @@
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const util_1 = require("./util");
 let TreeView = null;
 try {
     TreeView = window.require('tree-view/lib/tree-view');
@@ -16,14 +15,14 @@ class TreeViewLabel {
     // when the parent layer is removed
     destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, env: { settings, markers: { addMarker }, }, } = this;
-        this.element = util_1.createLabelElement(keyLabel, settings);
+        const { keyLabel, targetEl, env: { settings, labels: { addLabel, createLabel }, }, } = this;
+        this.element = createLabel(keyLabel, settings);
         const rect = targetEl.getBoundingClientRect();
-        addMarker(this.element, rect.left, rect.top);
+        addLabel(this.element, rect.left, rect.top);
         return this;
     }
     animateBeacon() {
-        util_1.animateBeacon(this.targetEl);
+        this.env.labels.animateBeacon(this.targetEl);
     }
     jump() {
         const { treeView, treeViewEntry: entry, env: { settings: { treeViewAutoSelect }, } } = this;

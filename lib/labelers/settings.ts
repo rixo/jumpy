@@ -1,7 +1,6 @@
 'use babel'
 
 import { LabelEnvironment, Label, Labeler } from '../label-interface'
-import { createLabelElement, animateBeacon } from './util';
 
 let SettingsView = null
 try {
@@ -36,10 +35,10 @@ class SettingsViewLabel implements Label {
       targetSelectorOptions: selOpts,
       env: {
         settings,
-        markers: {addMarker},
+        labels: {addLabel, createLabel},
       },
     } = this
-    this.element = createLabelElement(keyLabel, settings)
+    this.element = createLabel(keyLabel, settings)
     const rect = targetEl.getBoundingClientRect()
     const pos: {top?, left?, bottom?, right?} = {}
     if (selOpts) {
@@ -59,7 +58,7 @@ class SettingsViewLabel implements Label {
       pos.top = rect.top + 'px'
       pos.left = rect.left + 'px'
     }
-    addMarker(this.element, pos)
+    addLabel(this.element, pos)
     return this
   }
 
@@ -79,7 +78,7 @@ class SettingsViewLabel implements Label {
   }
 
   animateBeacon() {
-    animateBeacon(this.targetEl)
+    this.env.labels.animateBeacon(this.targetEl)
   }
 }
 

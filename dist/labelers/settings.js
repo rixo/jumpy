@@ -1,7 +1,6 @@
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const util_1 = require("./util");
 let SettingsView = null;
 try {
     SettingsView = window.require('settings-view/lib/settings-view');
@@ -16,8 +15,8 @@ class SettingsViewLabel {
     // when the parent layer is removed
     destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, targetSelectorOptions: selOpts, env: { settings, markers: { addMarker }, }, } = this;
-        this.element = util_1.createLabelElement(keyLabel, settings);
+        const { keyLabel, targetEl, targetSelectorOptions: selOpts, env: { settings, labels: { addLabel, createLabel }, }, } = this;
+        this.element = createLabel(keyLabel, settings);
         const rect = targetEl.getBoundingClientRect();
         const pos = {};
         if (selOpts) {
@@ -38,7 +37,7 @@ class SettingsViewLabel {
             pos.top = rect.top + 'px';
             pos.left = rect.left + 'px';
         }
-        addMarker(this.element, pos);
+        addLabel(this.element, pos);
         return this;
     }
     jump() {
@@ -59,7 +58,7 @@ class SettingsViewLabel {
         }
     }
     animateBeacon() {
-        util_1.animateBeacon(this.targetEl);
+        this.env.labels.animateBeacon(this.targetEl);
     }
 }
 const labeler = $$$(() => {

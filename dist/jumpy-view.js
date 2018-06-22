@@ -13,7 +13,7 @@ const tree_view_1 = require("./labelers/tree-view");
 const StateMachine = require("javascript-state-machine");
 const keys_1 = require("./keys");
 const viewHelpers_1 = require("./viewHelpers");
-const marker_manager_1 = require("./marker-manager");
+const label_manager_1 = require("./label-manager");
 const $$$ = fn => fn();
 const concatAll = (a, b) => a.concat(b);
 const hasKeyLabel = label => label.keyLabel;
@@ -80,10 +80,10 @@ class JumpyView {
                         this.keyEventsElement.addEventListener(e, () => this.clearJumpModeHandler(), true);
                     }
                     const keys = keys_1.getKeySet(settings);
-                    const markerManager = marker_manager_1.default(settings);
+                    const labelManager = label_manager_1.default(settings);
                     const environment = {
                         settings,
-                        markers: markerManager,
+                        labels: labelManager,
                     };
                     // TODO:rixo move that responsibility in tree-view related module
                     const treeView = document.getElementsByClassName('tree-view');
@@ -114,10 +114,10 @@ class JumpyView {
                         .filter(isTruthy);
                     this.allLabels = allLabels;
                     // apply changes all at once to DOM
-                    markerManager.render();
+                    labelManager.render();
                     // self contained cleaning function
                     this.destroyLabels = () => {
-                        markerManager.destroy();
+                        labelManager.destroy();
                         for (const label of this.allLabels) {
                             label.destroy();
                         }

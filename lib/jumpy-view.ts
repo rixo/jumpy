@@ -15,7 +15,7 @@ import getTreeViewLabels from './labelers/tree-view'
 import * as StateMachine from 'javascript-state-machine';
 import { getKeySet } from './keys';
 import { addJumpModeClasses, removeJumpModeClasses } from './viewHelpers';
-import createMarkerManager from './marker-manager'
+import createLabelManager from './label-manager'
 
 const $$$ = fn => fn()
 const concatAll = (a, b) => a.concat(b)
@@ -109,10 +109,10 @@ export default class JumpyView {
           }
 
           const keys = getKeySet(settings)
-          const markerManager = createMarkerManager(settings)
+          const labelManager = createLabelManager(settings)
           const environment: LabelEnvironment = {
             settings,
-            markers: markerManager,
+            labels: labelManager,
           };
 
           // TODO:rixo move that responsibility in tree-view related module
@@ -151,11 +151,11 @@ export default class JumpyView {
           this.allLabels = allLabels
 
           // apply changes all at once to DOM
-          markerManager.render()
+          labelManager.render()
 
           // self contained cleaning function
           this.destroyLabels = () => {
-            markerManager.destroy()
+            labelManager.destroy()
             for (const label of this.allLabels) {
               label.destroy()
             }

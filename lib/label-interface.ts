@@ -1,8 +1,8 @@
-import {MarkerManager} from './marker-manager'
+import {LabelManager} from './label-manager'
 
 export interface LabelEnvironment {
   settings: any
-  markers: MarkerManager
+  labels: LabelManager
 }
 
 export interface Label {

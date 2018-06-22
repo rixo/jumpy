@@ -2,7 +2,6 @@
 
 import { LabelEnvironment, Label, Labeler } from '../label-interface';
 import { TextEditor, Pane } from 'atom';
-import { createLabelElement, animateBeacon } from './util';
 
 let SettingsView
 try {
@@ -29,13 +28,13 @@ class TabLabel implements Label {
             targetEl,
             env: {
                 settings,
-                markers: {addMarker},
+                labels: {createLabel, addLabel},
             },
         } = this
-        this.element = createLabelElement(keyLabel, settings)
+        this.element = createLabel(keyLabel, settings)
         this.element.classList.add('tab-label')
         const rect = targetEl.getBoundingClientRect()
-        addMarker(this.element, rect.left, rect.top)
+        addLabel(this.element, rect.left, rect.top)
         return this
     }
 
@@ -46,7 +45,7 @@ class TabLabel implements Label {
     }
 
     animateBeacon() {
-      animateBeacon(this.element, 0)
+      this.env.labels.animateBeacon(this.element, 0)
     }
 }
 

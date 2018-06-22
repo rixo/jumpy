@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const viewHelpers_1 = require("../viewHelpers");
 const atom_1 = require("atom");
-const util_1 = require("./util");
 // reloads regex implem without having to restart Atom
 const DEBUG_REGEX = false;
 const $$$ = fn => fn();
@@ -23,12 +22,6 @@ function getVisibleColumnRange(editorView) {
 function isVisible(element) {
     return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
-const majStart = 'A'.charCodeAt(0);
-const majEnd = 'Z'.charCodeAt(0);
-const isMaj = k => {
-    const charCode = k.charCodeAt(0);
-    return charCode >= majStart && charCode <= majEnd;
-};
 const selectVisualMode = (editor, destination) => {
     const cursorPosition = editor.getCursorScreenPosition();
     const { row: cursorRow, column: cursorCol } = cursorPosition;
@@ -67,10 +60,10 @@ const selectVisualMode = (editor, destination) => {
 class WordLabel {
     destroy() { }
     drawLabel() {
-        const { textEditor, lineNumber, column, keyLabel, env: { settings, markers: { addEditorMarker }, } } = this;
-        const labelElement = util_1.createLabelElement(keyLabel, settings);
+        const { textEditor, lineNumber, column, keyLabel, env: { settings, labels: { createLabel, addEditorLabel }, } } = this;
+        const labelElement = createLabel(keyLabel, settings);
         labelElement.classList.add('jumpy-label-editor'); // For styling and tests
-        addEditorMarker(textEditor, labelElement, lineNumber, column);
+        addEditorLabel(textEditor, labelElement, lineNumber, column);
         this.element = labelElement;
         return this;
     }

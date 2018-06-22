@@ -1,6 +1,5 @@
 'use babel'
 
-// const isMajRe = /[A-Z]/
 const majStart = 'A'.charCodeAt(0)
 const majEnd = 'Z'.charCodeAt(0)
 export const isMaj = k => {
@@ -8,7 +7,7 @@ export const isMaj = k => {
   return charCode >= majStart && charCode <= majEnd
 }
 
-export const createLabelElement = (
+export default (
   keyLabel: string,
   settings: any,
 ) => {
@@ -25,25 +24,4 @@ export const createLabelElement = (
     labelElement.appendChild(span)
   }
   return labelElement
-}
-
-export const animateBeacon = (
-  target: HTMLElement,
-  delay: boolean|number = false,
-) => {
-  const beacon = document.createElement('div')
-  const {style, classList} = beacon
-  classList.add('jumpy-beacon')
-  const {top, left, width, height} = target.getBoundingClientRect()
-  style.left = left + width / 2 + 'px'
-  style.top = top + height / 2 + 'px'
-  const display = () => {
-    document.body.appendChild(beacon)
-    setTimeout(() => beacon.remove(), 150)
-  }
-  if (delay === false) {
-    display()
-  } else {
-    setTimeout(display, delay)
-  }
 }

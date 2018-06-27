@@ -96,6 +96,8 @@ describe('jumpy match all-the-things regex', () => {
     return chars.join('')
   }
 
+  const getData = () => jumpy.core.stateMachineCache.stateMachine.data
+
   const expectMatches = ({code, expected, options}) => async () => {
     const editor = atom.workspace.getActiveTextEditor()
     const {element} = editor
@@ -113,11 +115,11 @@ describe('jumpy match all-the-things regex', () => {
     }
 
     await atom.commands.dispatch(element, 'jumpy:toggle')
-    const {jumpyView: {currentLabels}} = jumpy
+    const {visibleLabels} = getData()
 
     const resultChars = Array.from(expected)
     const missing = resultChars.map(c => c === '_')
-    currentLabels.forEach(({column}) => {
+    visibleLabels.forEach(({column}) => {
       if (expected[column] === '_') {
         missing[column] = false
       } else {
@@ -128,7 +130,7 @@ describe('jumpy match all-the-things regex', () => {
       .map((x, i) => x === true ? i : false)
       .filter(x => x !== false)
       .forEach(i => resultChars[i] = 'x')
-    const resultAsString = getLabelsAsString(code, currentLabels)
+    const resultAsString = getLabelsAsString(code, visibleLabels)
     if (resultAsString !== expected) {
       fail(formatResult(resultAsString, expected, resultChars.join(''), code))
     }
@@ -147,7 +149,6 @@ describe('jumpy match all-the-things regex', () => {
     ]).then(() => {
       const pack = atom.packages.getActivePackage('jumpy')
       jumpy = pack.mainModule
-      jumpy.jumpyView
     })
   })
 

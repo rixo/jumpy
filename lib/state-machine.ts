@@ -1,35 +1,25 @@
 'use babel'
 
 import {Machine} from 'xstate'
+import {
+  StateMachine as GenericStateMachine,
+  Api as GenericApi,
+  Event,
+  createStatefulMachine,
+} from './state-machine/util'
 import {Config} from './config'
-import {createLabelMatcher} from './label-matcher'
+import {Label} from './label-interface'
+import {filterLabels} from './label-matcher'
 
-type Label = any
-
-type Data = {
+export type Data = {
   config: Config
   keys: string[]
   labels: Label[]
-  hiddenLabels: Label[]
   visibleLabels: Label[]
+  hiddenLabels: Label[]
 }
 
-type Adapter = {
-  grabKeyboard: (data: Data) => Data | void
-  releaseKeyboard: (data: Data) => Data | void
-  createLabels: (data: Data) => Data | void
-  destroyLabels: (data: Data) => Data | void
-  filterLabels?: (data: Data) => Data | void
-  // update labels elements (css classes)
-  updateLabels: (data: Data) => Data | void
-  jump: (data: Data) => Data | void
-  statusIdle: (data: Data) => Data | void
-  statusMatch: (data: Data) => Data | void
-  statusNoMatch: (data: Data) => Data | void
-}
-
-type Api = {
-  getState(): any // for tests
+interface Api extends GenericApi {
   activate(): void
   cancel(): void
   back(): void
@@ -37,12 +27,25 @@ type Api = {
   key(key): void
 }
 
-type Params = {
-  config: Config,
-  adapter: Adapter
+type StateMachine = GenericStateMachine<Data, Api>
+
+type ActionHandler = (data: Data, event: Event) => Data | void
+
+export type Adapter = {
+  grabKeyboard: ActionHandler
+  releaseKeyboard: ActionHandler
+  createLabels: ActionHandler
+  destroyLabels: ActionHandler
+  filterLabels?: ActionHandler
+  // update labels elements (css classes)
+  updateLabels: ActionHandler
+  jump: ActionHandler
+  statusIdle: ActionHandler
+  statusMatch: ActionHandler
+  statusNoMatch: ActionHandler
 }
 
-const fsm = Machine(<any> {
+const fsm = Machine({
   key: 'jumpy',
   initial: 'idle',
   strict: true,
@@ -119,147 +122,39 @@ const actionWrappers = {
   }
 }
 
-export const createStateMachine: (config: Params) => Api = ({
+const ApiSpec = ({dispatch}) => ({
+  activate: 'ACTIVATE',
+  back: 'BACK',
+  reset: 'RESET',
+  cancel: 'CANCEL',
+  key: key => {
+    dispatch({type: 'KEY', key})
+  },
+})
+
+const Data = (config: Config): Data => ({
   config,
-  adapter,
-}) => {
-  let state = fsm.initialState
+  keys: [],
+  labels: [],
+  hiddenLabels: [],
+  visibleLabels: [],
+})
 
-  let data: Data = {
-    config,
-    keys: [],
-    labels: [],
-    hiddenLabels: [],
-    visibleLabels: [],
-  }
+type Params = {
+  config: Config,
+  adapter: Adapter
+}
 
-  // We want to keep our dispatch chain synchronous.
-  //
-  // For example, api.key() transisions by emitting KEY event, that in turn
-  // fires filterLabels action, in which we will emit MATCH/NO_MATCH/JUMP. This
-  // will trigger a transition from current state to partial_match/no_match.
-  //
-  // Here's an example dispatch chain that we get:
-  //
-  //     KEY@first_key -> MATCH@first_key -> partial_match
-  //
-  // We won't have "background" treatments, like downloading, in Jumpy. On
-  // the contrary, this state machine is just for UI actions that we would
-  // want instantaneous. So we don't want to needlessly introduce complexity
-  // by making api.* methods or dispatch return asynchronously.
-  //
-  // We're still using a dispatch queue to ensure that the "extended state"
-  // (named data here) returned by a given action has been updated
-  // *before* any nested dispatch is executed.
-  //
-  const dispatch = event => {
-    // console.log('dispatch', event)
-    state = fsm.transition(state, event)
-    const queue = []
-    const dispatchAfter = (...args) => {
-      queue.push(args)
-    }
-    data = processActions(adapter, state, data, event, dispatchAfter)
-    queue.forEach(args => {
-      (<any> dispatch)(...args)
-    })
-  }
-
-  const api = <Api> dispatcher(dispatch, {
-    getState: () => state.value,
-    getFirstState: () => getFirstPath(state.value),
-    activate: 'ACTIVATE',
-    back: 'BACK',
-    reset: 'RESET',
-    cancel: 'CANCEL',
-    key: key => {
-      dispatch({type: 'KEY', key})
-    },
+// lower level than Api, useful for testing
+export const createStateMachine: (params: Params) => StateMachine =
+  ({config, adapter}) => createStatefulMachine({
+    fsm,
+    defaultActions,
+    actionWrappers,
+    adapter,
+    ApiSpec,
+    data: Data(config),
   })
 
-  return api
-}
-
-const dispatcher = (
-  dispatch: Function,
-  o: {[name: string]: Function|string},
-): {[name: string]: Function} => {
-  Object.entries(o).forEach(([method, handler]) => {
-    if (typeof handler === 'string') {
-      o[method] = () => {
-        dispatch(handler)
-      }
-    }
-  })
-  return <{[name: string]: Function}> o
-}
-
-const filterLabels = data => {
-  const {labels, keys} = data
-  let visibleLabels, hiddenLabels
-  if (keys.length === 0) {
-    visibleLabels = labels
-    hiddenLabels = []
-  } else {
-    const test = createLabelMatcher(data)
-    visibleLabels = labels
-    hiddenLabels = []
-    visibleLabels = data.visibleLabels.filter(label => {
-      if (test(label)) {
-        return true
-      } else {
-        hiddenLabels.push(label)
-        return false
-      }
-    })
-  }
-  return {
-    ...data,
-    visibleLabels,
-    hiddenLabels,
-  }
-}
-
-const processActions = (
-  adapter,
-  state,
-  data: Data,
-  event,
-  dispatch,
-): Data => {
-  for (const action of state.actions) {
-    if (typeof action !== 'string') {
-      throw new Error('Unsuppoted action type: ' + typeof action)
-    }
-    let handler = adapter[action] || defaultActions[action]
-    const wrapper = actionWrappers[action]
-    if (wrapper) {
-      handler = wrapper(dispatch, handler)
-    } else if (!handler) {
-      throw new Error('Missing handler for action: ' + action)
-    }
-    const result = handler(data, event, dispatch)
-    if (result !== undefined) {
-      data = result
-    }
-  }
-  return data
-}
-
-const getFirstPath = obj => {
-  let cursor = obj
-  const steps = []
-  while (typeof cursor === 'object') {
-    const entry = Object.entries(cursor)[0]
-    if (!entry) {
-      break
-    }
-    const [step, next] = entry
-    steps.push(step)
-    cursor = next
-  }
-  if (typeof cursor === 'string') {
-    steps.push(cursor)
-  }
-  return steps.join('.')
-}
+export const createStateMachineApi: (params: Params) => Api = params =>
+  createStateMachine(params).api

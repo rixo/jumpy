@@ -4,11 +4,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("./config");
 module.exports = {
     config: config_1.default,
-    jumpyView: null,
+    // jumpyView: null,
     // activate(state: any) {
     activate() {
         // lazy load implementation
-        const Core = require('./core').default;
+        const Core = require('./atom/core').default;
         this.core = Core();
         this.core.activate();
         // const JumpyView = require('./jumpy-view').default;

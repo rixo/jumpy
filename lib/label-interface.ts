@@ -7,7 +7,7 @@ export interface LabelEnvironment {
 
 export interface Label {
   keyLabel: string
-  element: HTMLElement
+  element?: HTMLElement
   drawLabel(): Label
   animateBeacon(): void
   jump(): void

@@ -4,11 +4,11 @@ import config from './config'
 
 module.exports = {
   config,
-  jumpyView: null,
+  // jumpyView: null,
   // activate(state: any) {
   activate() {
     // lazy load implementation
-    const Core = require('./core').default
+    const Core = require('./atom/core').default
     this.core = Core()
     this.core.activate()
     // const JumpyView = require('./jumpy-view').default;

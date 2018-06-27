@@ -14,6 +14,8 @@ describe('jumpy visual mode selection', () => {
   // vim emulation is not top notch yet
   let hasVim = false
 
+  const getStateMachine = () => jumpy.core.stateMachineCache.stateMachine
+
   beforeEach(async () => {
     try {
       await atom.packages.activatePackage('vim-mode-plus')
@@ -82,17 +84,16 @@ describe('jumpy visual mode selection', () => {
     atom.config.set('jumpy.matchPattern', '.')
     atom.config.set('jumpy.useBuiltInRegexMatchAllTheThings', false)
     const promise = atom.commands.dispatch(element, 'jumpy:toggle').then(() => {
-      const {jumpyView: {currentLabels, fsm}} = jumpy
-      const label = currentLabels.find(
+      const {api, data: {visibleLabels}} = getStateMachine()
+      const label = visibleLabels.find(
         ({lineNumber, column}) => row === lineNumber && col === column
       )
       if (!label) {
         throw new Error(`No label at ${row}:${col}`)
       }
-      if (!fsm.can('jump')) {
-        throw new Error('Cannot jump')
-      }
-      fsm.jump(label)
+      Array.from(label.keyLabel).forEach(key => {
+        api.key(key)
+      })
       if (callback) {
         const text = editor.getSelectedText()
         const {row, column} = editor.getCursorBufferPosition()
@@ -115,7 +116,6 @@ describe('jumpy visual mode selection', () => {
     ]).then(() => {
       const pack = atom.packages.getActivePackage('jumpy')
       jumpy = pack.mainModule
-      jumpy.jumpyView
     }).then(() => {
       editor = atom.workspace.getActiveTextEditor()
       editor.setText(code)

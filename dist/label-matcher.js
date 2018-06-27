@@ -20,4 +20,28 @@ exports.createLabelMatcher = ({ config: { smartCaseMatch }, keys, visibleLabels,
         return ({ keyLabel }) => keyLabel[testIndex] === character;
     }
 };
+exports.filterLabels = (data) => {
+    const { labels, keys } = data;
+    let visibleLabels, hiddenLabels;
+    if (keys.length === 0) {
+        visibleLabels = labels;
+        hiddenLabels = [];
+    }
+    else {
+        const test = exports.createLabelMatcher(data);
+        visibleLabels = labels;
+        hiddenLabels = [];
+        visibleLabels = data.visibleLabels.filter(label => {
+            if (test(label)) {
+                return true;
+            }
+            else {
+                hiddenLabels.push(label);
+                return false;
+            }
+        });
+    }
+    return Object.assign({}, data, { visibleLabels,
+        hiddenLabels });
+};
 //# sourceMappingURL=label-matcher.js.map

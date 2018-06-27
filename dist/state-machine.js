@@ -2,6 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const xstate_1 = require("xstate");
+const util_1 = require("./state-machine/util");
 const label_matcher_1 = require("./label-matcher");
 const fsm = xstate_1.Machine({
     key: 'jumpy',
@@ -57,7 +58,7 @@ const actionWrappers = {
         const { visibleLabels: { length: n0 } } = data;
         // if filterLabels is provided in adapter, it completely
         // overrides filtering logic (only)
-        const actualFilterLabels = handler || filterLabels;
+        const actualFilterLabels = handler || label_matcher_1.filterLabels;
         const newData = actualFilterLabels(data, event);
         const { config: { numKeys }, keys: { length: nKeys }, visibleLabels: { length: n1 }, } = newData;
         if (nKeys > 0) {
@@ -75,128 +76,30 @@ const actionWrappers = {
         return newData;
     }
 };
-exports.createStateMachine = ({ config, adapter, }) => {
-    let state = fsm.initialState;
-    let data = {
-        config,
-        keys: [],
-        labels: [],
-        hiddenLabels: [],
-        visibleLabels: [],
-    };
-    // We want to keep our dispatch chain synchronous.
-    //
-    // For example, api.key() transisions by emitting KEY event, that in turn
-    // fires filterLabels action, in which we will emit MATCH/NO_MATCH/JUMP. This
-    // will trigger a transition from current state to partial_match/no_match.
-    //
-    // Here's an example dispatch chain that we get:
-    //
-    //     KEY@first_key -> MATCH@first_key -> partial_match
-    //
-    // We won't have "background" treatments, like downloading, in Jumpy. On
-    // the contrary, this state machine is just for UI actions that we would
-    // want instantaneous. So we don't want to needlessly introduce complexity
-    // by making api.* methods or dispatch return asynchronously.
-    //
-    // We're still using a dispatch queue to ensure that the "extended state"
-    // (named data here) returned by a given action has been updated
-    // *before* any nested dispatch is executed.
-    //
-    const dispatch = event => {
-        // console.log('dispatch', event)
-        state = fsm.transition(state, event);
-        const queue = [];
-        const dispatchAfter = (...args) => {
-            queue.push(args);
-        };
-        data = processActions(adapter, state, data, event, dispatchAfter);
-        queue.forEach(args => {
-            dispatch(...args);
-        });
-    };
-    const api = dispatcher(dispatch, {
-        getState: () => state.value,
-        getFirstState: () => getFirstPath(state.value),
-        activate: 'ACTIVATE',
-        back: 'BACK',
-        reset: 'RESET',
-        cancel: 'CANCEL',
-        key: key => {
-            dispatch({ type: 'KEY', key });
-        },
-    });
-    return api;
-};
-const dispatcher = (dispatch, o) => {
-    Object.entries(o).forEach(([method, handler]) => {
-        if (typeof handler === 'string') {
-            o[method] = () => {
-                dispatch(handler);
-            };
-        }
-    });
-    return o;
-};
-const filterLabels = data => {
-    const { labels, keys } = data;
-    let visibleLabels, hiddenLabels;
-    if (keys.length === 0) {
-        visibleLabels = labels;
-        hiddenLabels = [];
-    }
-    else {
-        const test = label_matcher_1.createLabelMatcher(data);
-        visibleLabels = labels;
-        hiddenLabels = [];
-        visibleLabels = data.visibleLabels.filter(label => {
-            if (test(label)) {
-                return true;
-            }
-            else {
-                hiddenLabels.push(label);
-                return false;
-            }
-        });
-    }
-    return Object.assign({}, data, { visibleLabels,
-        hiddenLabels });
-};
-const processActions = (adapter, state, data, event, dispatch) => {
-    for (const action of state.actions) {
-        if (typeof action !== 'string') {
-            throw new Error('Unsuppoted action type: ' + typeof action);
-        }
-        let handler = adapter[action] || defaultActions[action];
-        const wrapper = actionWrappers[action];
-        if (wrapper) {
-            handler = wrapper(dispatch, handler);
-        }
-        else if (!handler) {
-            throw new Error('Missing handler for action: ' + action);
-        }
-        const result = handler(data, event, dispatch);
-        if (result !== undefined) {
-            data = result;
-        }
-    }
-    return data;
-};
-const getFirstPath = obj => {
-    let cursor = obj;
-    const steps = [];
-    while (typeof cursor === 'object') {
-        const entry = Object.entries(cursor)[0];
-        if (!entry) {
-            break;
-        }
-        const [step, next] = entry;
-        steps.push(step);
-        cursor = next;
-    }
-    if (typeof cursor === 'string') {
-        steps.push(cursor);
-    }
-    return steps.join('.');
-};
+const ApiSpec = ({ dispatch }) => ({
+    activate: 'ACTIVATE',
+    back: 'BACK',
+    reset: 'RESET',
+    cancel: 'CANCEL',
+    key: key => {
+        dispatch({ type: 'KEY', key });
+    },
+});
+const Data = (config) => ({
+    config,
+    keys: [],
+    labels: [],
+    hiddenLabels: [],
+    visibleLabels: [],
+});
+// lower level than Api, useful for testing
+exports.createStateMachine = ({ config, adapter }) => util_1.createStatefulMachine({
+    fsm,
+    defaultActions,
+    actionWrappers,
+    adapter,
+    ApiSpec,
+    data: Data(config),
+});
+exports.createStateMachineApi = params => exports.createStateMachine(params).api;
 //# sourceMappingURL=state-machine.js.map

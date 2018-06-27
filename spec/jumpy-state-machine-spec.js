@@ -20,8 +20,9 @@ const mockAdapter = specs => specs.reduce((adapter, name) => {
   return adapter
 }, {calls: []})
 
-fdescribe('jumpy state machine', () => {
-  let fsm
+describe('jumpy state machine', () => {
+  let stateMachine
+  let api
   let adapter
   let visibleLabelsLength
   beforeEach(() => {
@@ -44,28 +45,29 @@ fdescribe('jumpy state machine', () => {
       'statusNoMatch',
     ])
     const config = parseConfig({numKeys: 2})
-    fsm = createStateMachine({config, adapter})
+    stateMachine = createStateMachine({config, adapter})
+    api = stateMachine.api
   })
 
   const focus = async (before, after) => {
     adapter.calls = []
     await before()
-    const state = fsm.getFirstState()
+    const state = stateMachine.getStatePath()
     const {calls} = adapter
     return after(state, calls)
   }
 
   const focusPartialMatch = (before, after) => () => {
-    fsm.activate()
+    api.activate()
     visibleLabelsLength.after = visibleLabelsLength.before - 1
-    fsm.key('a')
+    api.key('a')
     return focus(before, after)
   }
 
   const focusNoMatch = (before, after) => () => {
-    fsm.activate()
+    api.activate()
     visibleLabelsLength.after = visibleLabelsLength.before
-    fsm.key('a')
+    api.key('a')
     return focus(before, after)
   }
 
@@ -82,8 +84,8 @@ fdescribe('jumpy state machine', () => {
   }
 
   it('activates', () => {
-    fsm.activate()
-    expect(fsm.getFirstState()).toBe('input.first_key')
+    api.activate()
+    expect(stateMachine.getStatePath()).toBe('input.first_key')
     expect(adapter.calls).toEqual([
       'grabKeyboard',
       'createLabels',
@@ -91,9 +93,9 @@ fdescribe('jumpy state machine', () => {
   })
 
   it('goes from first_key to partial_match', () => {
-    fsm.activate()
+    api.activate()
     return focus(() => {
-      fsm.key('a')
+      api.key('a')
     }, (state, calls) => {
       expect(state).toBe('input.partial_match')
       expect(calls).toEqual([
@@ -106,9 +108,9 @@ fdescribe('jumpy state machine', () => {
 
   it('goes from first_key to no_match', () => {
     visibleLabelsLength.after = visibleLabelsLength.before
-    fsm.activate()
+    api.activate()
     return focus(() => {
-      fsm.key('a')
+      api.key('a')
     }, (state, calls) => {
       expect(state).toBe('input.no_match')
       console.log(calls)
@@ -122,7 +124,7 @@ fdescribe('jumpy state machine', () => {
 
   it('goes from partial_match to no_match', focusPartialMatch(() => {
     visibleLabelsLength.after = visibleLabelsLength.before
-    fsm.key('b')
+    api.key('b')
   }, (state, calls) => {
     expect(state).toBe('input.no_match')
     expect(calls).toEqual([
@@ -133,7 +135,7 @@ fdescribe('jumpy state machine', () => {
   }))
 
   it('goes from no_match to no_match', focusNoMatch(() => {
-    fsm.key('b')
+    api.key('b')
   }, (state, calls) => {
     expect(state).toBe('input.no_match')
     expect(calls).toEqual([
@@ -145,7 +147,7 @@ fdescribe('jumpy state machine', () => {
 
   it('goes from no_match to partial_match', focusNoMatch(() => {
     visibleLabelsLength.after = visibleLabelsLength.before - 1
-    fsm.key('b')
+    api.key('b')
   }, (state, calls) => {
     expect(state).toBe('input.partial_match')
     expect(calls).toEqual([
@@ -157,26 +159,26 @@ fdescribe('jumpy state machine', () => {
 
   it('goes from partial_match to jump', focusPartialMatch(() => {
     visibleLabelsLength.after = 1
-    fsm.key('b')
+    api.key('b')
   }, expectJumpTransition))
 
   it('goes from no_match to jump', focusPartialMatch(() => {
     // then no match
     visibleLabelsLength.after = visibleLabelsLength.before
-    fsm.key('b')
+    api.key('b')
   }, state => {
     expect(state).toBe('input.no_match')
     // then final match
     return focus(() => {
       visibleLabelsLength.after = 1
-      fsm.key('c')
+      api.key('c')
     }, expectJumpTransition)
   }))
 
   // reset
   {
     const reset = () => {
-      fsm.reset()
+      api.reset()
     }
 
     const expectResetTransition = (state, calls) => {
@@ -189,7 +191,7 @@ fdescribe('jumpy state machine', () => {
     }
 
     it('resets from first_key', () => {
-      fsm.activate()
+      api.activate()
       return focus(reset, expectResetTransition)
     })
 
@@ -207,16 +209,17 @@ fdescribe('jumpy state machine', () => {
   describe('with 3 keys', () => {
     beforeEach(() => {
       const config = parseConfig({numKeys: 3})
-      fsm = createStateMachine({config, adapter})
+      stateMachine = createStateMachine({config, adapter})
+      api = stateMachine.api
     })
 
     it('goes from partial_match to partial_match', () => {
-      fsm.activate()
+      api.activate()
       visibleLabelsLength.after = visibleLabelsLength.before - 1
-      fsm.key('a')
+      api.key('a')
       return focus(() => {
         visibleLabelsLength.after = visibleLabelsLength.after - 1
-        fsm.key('b')
+        api.key('b')
       }, (state, calls) => {
         expect(state).toBe('input.partial_match')
         expect(calls).toEqual([
@@ -229,30 +232,30 @@ fdescribe('jumpy state machine', () => {
 
     it('goes from partial_match to jump', () => {
       visibleLabelsLength.after = visibleLabelsLength.before - 1
-      fsm.activate()
-      fsm.key('a')
+      api.activate()
+      api.key('a')
       visibleLabelsLength.after--
-      fsm.key('b')
+      api.key('b')
       return focus(() => {
         visibleLabelsLength.after = 1
-        fsm.key('c')
+        api.key('c')
       }, expectJumpTransition)
     })
 
     it('goes from no_match to jump', () => {
       visibleLabelsLength.after = visibleLabelsLength.before - 1
-      fsm.activate()
-      fsm.key('a')
-      expect(fsm.getFirstState()).toBe('input.partial_match')
+      api.activate()
+      api.key('a')
+      expect(stateMachine.getStatePath()).toBe('input.partial_match')
       visibleLabelsLength.after--
-      fsm.key('b')
-      expect(fsm.getFirstState()).toBe('input.partial_match')
+      api.key('b')
+      expect(stateMachine.getStatePath()).toBe('input.partial_match')
       visibleLabelsLength.after = visibleLabelsLength.before
-      fsm.key('c')
-      expect(fsm.getFirstState()).toBe('input.no_match')
+      api.key('c')
+      expect(stateMachine.getStatePath()).toBe('input.no_match')
       return focus(() => {
         visibleLabelsLength.after = 1
-        fsm.key('d')
+        api.key('d')
       }, expectJumpTransition)
     })
   })
@@ -271,13 +274,13 @@ fdescribe('jumpy state machine', () => {
     })
 
     it('keeps matching labels', () => {
-      fsm.activate()
+      api.activate()
       adapter.updateLabels = data => {
         const labels = data.visibleLabels.map(({keyLabel: s}) => s)
         expect(labels).toEqual(['aa', 'au'])
         expect(data.visible)
       }
-      fsm.key('a')
+      api.key('a')
     })
   })
 })

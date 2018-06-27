@@ -268,7 +268,7 @@ const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
         const editorView = atom.views.getView(textEditor);
 
         // 'jumpy-jump-mode is for keymaps and utilized by tests
-        addJumpModeClasses(editorView);
+        // addJumpModeClasses(editorView);
 
         const [ minColumn, maxColumn ] = getVisibleColumnRange(editorView);
         const rows = textEditor.getVisibleRowRange();

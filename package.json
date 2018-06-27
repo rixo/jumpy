@@ -37,7 +37,8 @@
   },
   "dependencies": {
     "javascript-state-machine": "2.4.0",
-    "lodash": "4.17.10"
+    "lodash": "4.17.10",
+    "xstate": "^3.3.2"
   },
   "devDependencies": {
     "@types/atom": "1.27.0",

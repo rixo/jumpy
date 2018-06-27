@@ -2,7 +2,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
-const viewHelpers_1 = require("../viewHelpers");
 const atom_1 = require("atom");
 // reloads regex implem without having to restart Atom
 const DEBUG_REGEX = false;
@@ -219,7 +218,7 @@ const labeler = function (env) {
     for (const textEditor of atom.workspace.getTextEditors()) {
         const editorView = atom.views.getView(textEditor);
         // 'jumpy-jump-mode is for keymaps and utilized by tests
-        viewHelpers_1.addJumpModeClasses(editorView);
+        // addJumpModeClasses(editorView);
         const [minColumn, maxColumn] = getVisibleColumnRange(editorView);
         const rows = textEditor.getVisibleRowRange();
         if (!rows || !isVisible(editorView)) {

@@ -19,6 +19,7 @@ const Adapter = ({
 }): Adapter => {
   const keyboard = KeyboardManager({onBlur, onKey})
   const labels = Labels(config)
+  const noop = () => {}
   return {
     ...keyboard,
     ...labels,
@@ -37,9 +38,12 @@ const Adapter = ({
       }
       label.jump()
     },
-    statusIdle: () => console.log('statusIdle'),
-    statusMatch: () => console.log('statusMatch'),
-    statusNoMatch: () => console.log('statusNoMatch'),
+    // statusIdle: () => console.log('statusIdle'),
+    // statusMatch: () => console.log('statusMatch'),
+    // statusNoMatch: () => console.log('statusNoMatch'),
+    statusIdle: noop,
+    statusMatch: noop,
+    statusNoMatch: noop,
   }
 }
 
@@ -81,6 +85,7 @@ const createStateMachineCache = () => {
 
   return {
     setConfig,
+    getStateMachine,
     withStateMachine,
     disposable,
     // for tests
@@ -93,6 +98,7 @@ export default () => {
   const stateMachineCache = createStateMachineCache()
   const {
     setConfig,
+    getStateMachine,
     withStateMachine,
     disposable: smcDisposable,
   } = stateMachineCache
@@ -102,6 +108,7 @@ export default () => {
     activate,
     deactivate,
     // for tests
+    getStateMachine,
     stateMachineCache,
   }
 

@@ -54,7 +54,6 @@ exports.default = (config) => {
         return Object.assign({}, data, { labels: empty, visibleLabels: empty, hiddenLabels: empty });
     };
     const updateLabels = (data) => {
-        console.log('updateLabels', data.keys);
         const { visibleLabels, hiddenLabels, keys } = data;
         if (keys.length === 0) {
             visibleLabels.forEach(({ element }) => {

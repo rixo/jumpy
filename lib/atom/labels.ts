@@ -82,7 +82,6 @@ export default (config): Labels => {
   }
 
   const updateLabels = (data: Data): void => {
-    console.log('updateLabels', data.keys)
     const {visibleLabels, hiddenLabels, keys} = data
     if (keys.length === 0) {
       visibleLabels.forEach(({element}) => {

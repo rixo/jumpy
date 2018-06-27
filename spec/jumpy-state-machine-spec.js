@@ -117,7 +117,6 @@ describe('jumpy state machine', () => {
       api.key('a')
     }, (state, calls) => {
       expect(state).toBe('input.no_match')
-      console.log(calls)
       expect(calls).toEqual([
         'filterLabels',
         'updateLabels',
@@ -142,7 +141,6 @@ describe('jumpy state machine', () => {
     api.key('b')
   }, (state, calls) => {
     expect(state).toBe('input.no_match')
-    console.log(calls)
     expect(calls).toEqual([
       'filterLabels',
       'updateLabels',

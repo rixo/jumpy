@@ -10,6 +10,7 @@ const configKeyPath = 'jumpy';
 const Adapter = ({ config, onBlur, onKey }) => {
     const keyboard = keyboard_1.default({ onBlur, onKey });
     const labels = labels_1.default(config);
+    const noop = () => { };
     return Object.assign({}, keyboard, labels, { focus: () => {
             const workspaceEl = atom.views.getView(atom.workspace);
             workspaceEl.classList.add('jumpy-jump-mode');
@@ -22,7 +23,11 @@ const Adapter = ({ config, onBlur, onKey }) => {
                 label.animateBeacon();
             }
             label.jump();
-        }, statusIdle: () => console.log('statusIdle'), statusMatch: () => console.log('statusMatch'), statusNoMatch: () => console.log('statusNoMatch') });
+        }, 
+        // statusIdle: () => console.log('statusIdle'),
+        // statusMatch: () => console.log('statusMatch'),
+        // statusNoMatch: () => console.log('statusNoMatch'),
+        statusIdle: noop, statusMatch: noop, statusNoMatch: noop });
 };
 const createStateMachineCache = () => {
     let lastConfig = null;
@@ -56,6 +61,7 @@ const createStateMachineCache = () => {
     const disposable = { dispose };
     return {
         setConfig,
+        getStateMachine,
         withStateMachine,
         disposable,
         // for tests
@@ -65,12 +71,13 @@ const createStateMachineCache = () => {
 };
 exports.default = () => {
     const stateMachineCache = createStateMachineCache();
-    const { setConfig, withStateMachine, disposable: smcDisposable, } = stateMachineCache;
+    const { setConfig, getStateMachine, withStateMachine, disposable: smcDisposable, } = stateMachineCache;
     let disposable;
     return {
         activate,
         deactivate,
         // for tests
+        getStateMachine,
         stateMachineCache,
     };
     function activate() {

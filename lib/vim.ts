@@ -18,8 +18,8 @@ interface Motion {
 }
 
 interface Jumpy {
-  jumpyView: {
-    toggle(callback: (label) => boolean | void): void
+  core: {
+    getStateMachine,
   }
 }
 
@@ -30,25 +30,26 @@ export const setup: setup = (jumpy, vim) => {
   const {getClass, registerCommandFromSpec} = vim
   const Motion = <{new(): Motion}> getClass('Motion')
 
-  const charsMax = Number.MAX_VALUE
-  const purpose = 'jumpy'
-
   class VimJump extends Motion {
     inclusive = true
     requireInput = true
     initialize() {
-      const {jumpyView} = jumpy
-      if (!jumpyView) {
+      const {core} = jumpy
+      if (!core) {
         this.cancelOperation()
         return
       }
-      jumpyView.toggle((label) => {
-        if (label.hasOwnProperty('lineNumber')) {
-          this.input = label
-          this.processOperation()
-          return false
-        }
-      })
+      const onJump = ({label}) => {
+        // we MUST give a value to input prop in order for
+        // processOperation to work
+        this.input = label
+        this.processOperation()
+        return false // prevent regular jump
+      }
+      const onCancel = () => {
+        this.cancelOperation()
+      }
+      core.getStateMachine().api.activate(onJump, onCancel)
     }
     moveCursor() {
       this.input.jump()

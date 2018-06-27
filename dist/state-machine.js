@@ -11,21 +11,31 @@ const fsm = xstate_1.Machine({
     strict: true,
     states: {
         idle: {
+            onEntry: ['clearCallbacks'],
             on: {
                 ACTIVATE: 'input',
             },
         },
         input: {
-            onEntry: ['resetKeys', 'focus', 'grabKeyboard', 'createLabels'],
-            onExit: ['blur', 'releaseKeyboard', 'destroyLabels', 'statusIdle'],
+            onEntry: [
+                'setCallbacks',
+                'resetKeys',
+                'focus',
+                'grabKeyboard',
+                'createLabels',
+            ],
+            onExit: [
+                'blur',
+                'releaseKeyboard',
+                'destroyLabels',
+                'statusIdle',
+            ],
             on: {
                 CANCEL: 'idle',
                 RESET: { '.first_key': { actions: ['resetKeys', ...refreshLabels] } },
-                JUMP: [
-                    { target: 'idle', actions: ['jump'] },
-                ],
                 NO_MATCH: { '.no_match': { actions: ['statusNoMatch'] } },
                 MATCH: { '.partial_match': { actions: ['statusMatch'] } },
+                JUMP: { idle: { actions: ['jump'] } },
             },
             initial: 'first_key',
             states: {
@@ -69,6 +79,20 @@ const defaultActions = {
     pushKey: (data, { key }) => (Object.assign({}, data, { keys: [...data.keys, key] })),
     popKey: (data) => (Object.assign({}, data, { keys: [...data.keys.slice(0, -1)] })),
     resetKeys: (data) => (Object.assign({}, data, { keys: [] })),
+    // setCallbacks: (data, {onJump, onCancel}) => ({
+    //   ...data,
+    //   callbacks: {onJump, onCancel},
+    // }),
+    // clearCallbacks: (data) => ({...data, callbacks: {}}),
+    setCallbacks: (data, event) => {
+        const { onJump, onCancel } = event;
+        console.log('setCallbacks', event);
+        return Object.assign({}, data, { callbacks: { onJump, onCancel } });
+    },
+    clearCallbacks: (data, event) => {
+        console.log('clearCallbacks', event);
+        return Object.assign({}, data, { callbacks: {} });
+    },
 };
 const actionWrappers = {
     filterLabels: (dispatch, handler) => (data, event) => {
@@ -91,10 +115,22 @@ const actionWrappers = {
             }
         }
         return newData;
+    },
+    jump: (dispatch, handler) => (data, event) => {
+        const { onJump } = data.callbacks;
+        if (onJump) {
+            const abort = onJump(event) === false;
+            if (abort) {
+                return;
+            }
+        }
+        return handler(data, event);
     }
 };
 const ApiSpec = ({ dispatch }) => ({
-    activate: 'ACTIVATE',
+    activate: (onJump, onCancel) => {
+        dispatch({ type: 'ACTIVATE', onJump, onCancel });
+    },
     back: 'BACK',
     reset: 'RESET',
     cancel: 'CANCEL',
@@ -108,6 +144,7 @@ const Data = (config) => ({
     labels: [],
     hiddenLabels: [],
     visibleLabels: [],
+    callbacks: {},
 });
 // lower level than Api, useful for testing
 exports.createStateMachine = ({ config, adapter }) => util_1.createStatefulMachine({

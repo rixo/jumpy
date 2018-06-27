@@ -22,6 +22,14 @@ const Adapter = ({
   return {
     ...keyboard,
     ...labels,
+    focus: () => {
+      const workspaceEl = atom.views.getView(atom.workspace)
+      workspaceEl.classList.add('jumpy-jump-mode')
+    },
+    blur: () => {
+      const workspaceEl = atom.views.getView(atom.workspace)
+      workspaceEl.classList.remove('jumpy-jump-mode')
+    },
     jump: (data: Data, {label}) => {
       const {config: {useHomingBeaconEffectOnJumps}} = data
       if (useHomingBeaconEffectOnJumps) {

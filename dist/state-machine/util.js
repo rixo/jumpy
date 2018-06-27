@@ -47,7 +47,7 @@ const createDispatch = (sm, { fsm: machine, defaultActions, actionWrappers, adap
     // *before* any nested dispatch is executed.
     //
     const dispatch = function (event) {
-        sm.state = machine.transition(sm.state, event);
+        sm.state = machine.transition(sm.state, event, sm.data);
         const queue = [];
         const dispatchAfter = (...args) => {
             queue.push(args);
@@ -79,7 +79,7 @@ const createActionProcessor = ({ defaultActions, actionWrappers, adapter, }) => 
                 throw new Error('Unsuppoted action type: ' + typeof action);
             }
             const handler = getHandler(action, dispatch);
-            const result = handler(data, event, dispatch);
+            const result = handler(data, event, { state, dispatch });
             if (result !== undefined) {
                 data = result;
             }

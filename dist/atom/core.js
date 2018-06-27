@@ -10,7 +10,13 @@ const configKeyPath = 'jumpy';
 const Adapter = ({ config, onBlur, onKey }) => {
     const keyboard = keyboard_1.default({ onBlur, onKey });
     const labels = labels_1.default(config);
-    return Object.assign({}, keyboard, labels, { jump: (data, { label }) => {
+    return Object.assign({}, keyboard, labels, { focus: () => {
+            const workspaceEl = atom.views.getView(atom.workspace);
+            workspaceEl.classList.add('jumpy-jump-mode');
+        }, blur: () => {
+            const workspaceEl = atom.views.getView(atom.workspace);
+            workspaceEl.classList.remove('jumpy-jump-mode');
+        }, jump: (data, { label }) => {
             const { config: { useHomingBeaconEffectOnJumps } } = data;
             if (useHomingBeaconEffectOnJumps) {
                 label.animateBeacon();

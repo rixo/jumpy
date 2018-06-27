@@ -2,7 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const keys_1 = require("../keys");
-const label_manager_1 = require("../label-manager");
+const label_manager_1 = require("./label-manager");
 const words_1 = require("../labelers/words");
 const tabs_1 = require("../labelers/tabs");
 const settings_1 = require("../labelers/settings");
@@ -31,6 +31,7 @@ exports.default = (config) => {
         const keys = keys_1.getKeySet(config);
         allLabels = allLabels
             .map(keys.assignKeyLabel(allLabels.length, wordLabels.length))
+            // exclude labels with no assigned keys
             .filter(hasKeyLabel);
         // render
         const isTruthy = x => !!x;
@@ -53,19 +54,30 @@ exports.default = (config) => {
         return Object.assign({}, data, { labels: empty, visibleLabels: empty, hiddenLabels: empty });
     };
     const updateLabels = (data) => {
-        const { visibleLabels, hiddenLabels } = data;
-        visibleLabels.forEach(({ element }) => {
-            if (element) {
-                element.classList.add('hot');
-                element.classList.remove('irrelevant');
-            }
-        });
-        hiddenLabels.forEach(({ element }) => {
-            if (element) {
-                element.classList.remove('hot');
-                element.classList.add('irrelevant');
-            }
-        });
+        console.log('updateLabels', data.keys);
+        const { visibleLabels, hiddenLabels, keys } = data;
+        if (keys.length === 0) {
+            visibleLabels.forEach(({ element }) => {
+                if (element) {
+                    element.classList.remove('hot');
+                    element.classList.remove('irrelevant');
+                }
+            });
+        }
+        else {
+            visibleLabels.forEach(({ element }) => {
+                if (element) {
+                    element.classList.add('hot');
+                    element.classList.remove('irrelevant');
+                }
+            });
+            hiddenLabels.forEach(({ element }) => {
+                if (element) {
+                    element.classList.remove('hot');
+                    element.classList.add('irrelevant');
+                }
+            });
+        }
     };
     return {
         createLabels,

@@ -1,5 +1,7 @@
 'use babel'
 
+// import {Config} from '../../config'
+
 const majStart = 'A'.charCodeAt(0)
 const majEnd = 'Z'.charCodeAt(0)
 export const isMaj = k => {
@@ -9,7 +11,7 @@ export const isMaj = k => {
 
 export default (
   keyLabel: string,
-  settings: any,
+  // settings: Config,
 ) => {
   const labelElement = document.createElement('div');
   labelElement.classList.add('jumpy-label'); // For styling and tests

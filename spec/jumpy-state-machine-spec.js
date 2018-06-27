@@ -28,6 +28,8 @@ describe('jumpy state machine', () => {
   beforeEach(() => {
     visibleLabelsLength = {before: 9, after: 3}
     adapter = mockAdapter([
+      'focus',
+      'blur',
       'grabKeyboard',
       'releaseKeyboard',
       function createLabels(data) {
@@ -76,6 +78,7 @@ describe('jumpy state machine', () => {
     expect(calls).toEqual([
       'filterLabels',
       'updateLabels',
+      'blur',
       'releaseKeyboard',
       'destroyLabels',
       'statusIdle',
@@ -87,6 +90,7 @@ describe('jumpy state machine', () => {
     api.activate()
     expect(stateMachine.getStatePath()).toBe('input.first_key')
     expect(adapter.calls).toEqual([
+      'focus',
       'grabKeyboard',
       'createLabels',
     ])
@@ -138,6 +142,7 @@ describe('jumpy state machine', () => {
     api.key('b')
   }, (state, calls) => {
     expect(state).toBe('input.no_match')
+    console.log(calls)
     expect(calls).toEqual([
       'filterLabels',
       'updateLabels',
@@ -206,6 +211,44 @@ describe('jumpy state machine', () => {
     ))
   }
 
+  // back
+  {
+    it('backs from first_key to idle', () => {
+      api.activate()
+      focus(() => {
+        api.back()
+      }, (state, calls) => {
+        expect(state).toBe('idle')
+        expect(calls).toEqual([
+          'blur',
+          'releaseKeyboard',
+          'destroyLabels',
+          'statusIdle',
+        ])
+      })
+    })
+
+    it('backs from partial_match to first_key', focusPartialMatch(() => {
+      api.back()
+    }, (state, calls) => {
+      expect(state).toBe('input.first_key')
+      expect(calls).toEqual([
+        'filterLabels',
+        'updateLabels',
+      ])
+    }))
+
+    it('backs from no_match to first_key', focusNoMatch(() => {
+      api.back()
+    }, (state, calls) => {
+      expect(state).toBe('input.first_key')
+      expect(calls).toEqual([
+        'filterLabels',
+        'updateLabels',
+      ])
+    }))
+  }
+
   describe('with 3 keys', () => {
     beforeEach(() => {
       const config = parseConfig({numKeys: 3})
@@ -258,6 +301,12 @@ describe('jumpy state machine', () => {
         api.key('d')
       }, expectJumpTransition)
     })
+
+    // TODO
+    it('backs from partial_match to partial_match')
+    it('backs from partial_match to no_match')
+    it('backs from no_match to partial_match')
+    it('backs from no_match to no_match')
   })
 
   describe('filterLabels', () => {

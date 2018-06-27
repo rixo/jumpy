@@ -1,1 +1,0 @@
-//# sourceMappingURL=adapter-atom.js.map

@@ -1,4 +1,7 @@
-import {LabelManager} from './label-manager'
+'use babel'
+
+// TODO remove dependency on editor specific code
+import {LabelManager} from './atom/label-manager'
 
 export interface LabelEnvironment {
   settings: any

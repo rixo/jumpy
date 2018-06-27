@@ -32,6 +32,8 @@ type StateMachine = GenericStateMachine<Data, Api>
 type ActionHandler = (data: Data, event: Event) => Data | void
 
 export type Adapter = {
+  focus: ActionHandler
+  blur: ActionHandler
   grabKeyboard: ActionHandler
   releaseKeyboard: ActionHandler
   createLabels: ActionHandler
@@ -45,6 +47,7 @@ export type Adapter = {
   statusNoMatch: ActionHandler
 }
 
+const refreshLabels = ['filterLabels', 'updateLabels']
 const fsm = Machine({
   key: 'jumpy',
   initial: 'idle',
@@ -55,12 +58,12 @@ const fsm = Machine({
         ACTIVATE: 'input',
       },
     },
-    input: {
-      onEntry: ['grabKeyboard', 'createLabels', 'resetKeys'],
-      onExit: ['releaseKeyboard', 'destroyLabels', 'statusIdle'],
+    input: <any> {
+      onEntry: ['resetKeys', 'focus', 'grabKeyboard', 'createLabels'],
+      onExit: ['blur', 'releaseKeyboard', 'destroyLabels', 'statusIdle'],
       on: {
         CANCEL: 'idle',
-        RESET: {'.first_key': {actions: ['resetKeys', 'filterLabels', 'updateLabels']}},
+        RESET: {'.first_key': {actions: ['resetKeys', ...refreshLabels]}},
         JUMP: [
           {target: 'idle', actions: ['jump']},
         ],
@@ -71,18 +74,34 @@ const fsm = Machine({
       states: {
         first_key: {
           on: {
-            // BACK: '#jumpy.idle',
-            KEY: {first_key: {actions: ['pushKey', 'filterLabels', 'updateLabels']}},
+            KEY: {first_key: {actions: ['pushKey', ...refreshLabels]}},
+            BACK: '#jumpy.idle',
           },
         },
         partial_match: {
           on: {
-            KEY: {partial_match: {actions: ['pushKey', 'filterLabels', 'updateLabels']}},
+            KEY: {partial_match: {actions: ['pushKey', ...refreshLabels]}},
+            BACK: [{
+              target: 'first_key',
+              actions: ['resetKeys', ...refreshLabels],
+              cond: ({keys}) => keys.length - 1 === 0,
+            }, {
+              target: 'partial_match',
+              actions: ['popKey', ...refreshLabels],
+            }],
           },
         },
         no_match: {
           on: {
-            KEY: {no_match: {actions: ['popKey', 'pushKey', 'filterLabels', 'updateLabels']}},
+            KEY: {no_match: {actions: ['popKey', 'pushKey', ...refreshLabels]}},
+            BACK: [{
+              target: 'first_key',
+              actions: ['resetKeys', ...refreshLabels],
+              cond: ({keys}) => keys.length - 1 === 0,
+            }, {
+              target: 'no_match',
+              actions: ['popKey', 'popKey', ...refreshLabels],
+            }],
           },
         },
       },

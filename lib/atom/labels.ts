@@ -2,7 +2,7 @@
 
 import {LabelEnvironment} from '../label-interface'
 import {getKeySet} from '../keys'
-import createLabelManager from '../label-manager'
+import createLabelManager from './label-manager'
 import getWordLabels from '../labelers/words'
 import getTabLabels from '../labelers/tabs'
 import getSettingsLabels from '../labelers/settings'
@@ -82,19 +82,29 @@ export default (config): Labels => {
   }
 
   const updateLabels = (data: Data): void => {
-    const {visibleLabels, hiddenLabels} = data
-    visibleLabels.forEach(({element}) => {
-      if (element) {
-        element.classList.add('hot')
-        element.classList.remove('irrelevant')
-      }
-    })
-    hiddenLabels.forEach(({element}) => {
-      if (element) {
-        element.classList.remove('hot')
-        element.classList.add('irrelevant')
-      }
-    })
+    console.log('updateLabels', data.keys)
+    const {visibleLabels, hiddenLabels, keys} = data
+    if (keys.length === 0) {
+      visibleLabels.forEach(({element}) => {
+        if (element) {
+          element.classList.remove('hot')
+          element.classList.remove('irrelevant')
+        }
+      })
+    } else {
+      visibleLabels.forEach(({element}) => {
+        if (element) {
+          element.classList.add('hot')
+          element.classList.remove('irrelevant')
+        }
+      })
+      hiddenLabels.forEach(({element}) => {
+        if (element) {
+          element.classList.remove('hot')
+          element.classList.add('irrelevant')
+        }
+      })
+    }
   }
 
   return {

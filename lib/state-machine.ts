@@ -1,11 +1,13 @@
 'use babel'
 
 import {Machine} from 'xstate'
+import {Config} from './config'
+import {createLabelMatcher} from './label-matcher'
 
 type Label = any
 
 type Data = {
-  numKeys: number
+  config: Config
   keys: string[]
   labels: Label[]
   hiddenLabels: Label[]
@@ -17,8 +19,13 @@ type Adapter = {
   releaseKeyboard: (data: Data) => Data | void
   createLabels: (data: Data) => Data | void
   destroyLabels: (data: Data) => Data | void
-  filterLabels: (data: Data) => Data | void
+  filterLabels?: (data: Data) => Data | void
+  // update labels elements (css classes)
+  updateLabels: (data: Data) => Data | void
   jump: (data: Data) => Data | void
+  statusIdle: (data: Data) => Data | void
+  statusMatch: (data: Data) => Data | void
+  statusNoMatch: (data: Data) => Data | void
 }
 
 type Api = {
@@ -30,8 +37,8 @@ type Api = {
   key(key): void
 }
 
-type Config = {
-  numKeys?: number
+type Params = {
+  config: Config,
   adapter: Adapter
 }
 
@@ -46,11 +53,11 @@ const fsm = Machine(<any> {
       },
     },
     input: {
-      onEntry: ['grabKeyboard', 'createLabels'],
+      onEntry: ['grabKeyboard', 'createLabels', 'resetKeys'],
       onExit: ['releaseKeyboard', 'destroyLabels', 'statusIdle'],
       on: {
         CANCEL: 'idle',
-        RESET: {'.first_key': {actions: ['resetKeys', 'filterLabels']}},
+        RESET: {'.first_key': {actions: ['resetKeys', 'filterLabels', 'updateLabels']}},
         JUMP: [
           {target: 'idle', actions: ['jump']},
         ],
@@ -62,17 +69,17 @@ const fsm = Machine(<any> {
         first_key: {
           on: {
             // BACK: '#jumpy.idle',
-            KEY: {first_key: {actions: ['pushKey', 'filterLabels']}},
+            KEY: {first_key: {actions: ['pushKey', 'filterLabels', 'updateLabels']}},
           },
         },
         partial_match: {
           on: {
-            KEY: {partial_match: {actions: ['pushKey', 'filterLabels']}},
+            KEY: {partial_match: {actions: ['pushKey', 'filterLabels', 'updateLabels']}},
           },
         },
         no_match: {
           on: {
-            KEY: {no_match: {actions: ['popKey', 'pushKey', 'filterLabels']}},
+            KEY: {no_match: {actions: ['popKey', 'pushKey', 'filterLabels', 'updateLabels']}},
           },
         },
       },
@@ -80,14 +87,46 @@ const fsm = Machine(<any> {
   },
 })
 
-export const createStateMachine: (config: Config) => Api = ({
-  numKeys = 2,
+const defaultActions = {
+  pushKey: (data, {key}) => ({...data, keys: [...data.keys, key]}),
+  popKey: (data) => ({...data, keys: [...data.keys.slice(0, -1)]}),
+  resetKeys: (data) => ({...data, keys: []}),
+}
+
+const actionWrappers = {
+  filterLabels: (dispatch, handler) => (data, event) => {
+    const {visibleLabels: {length: n0}} = data
+    // if filterLabels is provided in adapter, it completely
+    // overrides filtering logic (only)
+    const actualFilterLabels = handler || filterLabels
+    const newData = actualFilterLabels(data, event)
+    const {
+      config: {numKeys},
+      keys: {length: nKeys},
+      visibleLabels: {length: n1},
+    } = newData
+    if (nKeys > 0) {
+      if (n1 === 1 && nKeys === numKeys) {
+        const label = newData.visibleLabels[0]
+        dispatch({type: 'JUMP', label})
+      } else if (n0 <= n1) {
+        dispatch({...event, type: 'NO_MATCH'})
+      } else {
+        dispatch({...event, type: 'MATCH'})
+      }
+    }
+    return newData
+  }
+}
+
+export const createStateMachine: (config: Params) => Api = ({
+  config,
   adapter,
 }) => {
   let state = fsm.initialState
 
-  let data = {
-    numKeys,
+  let data: Data = {
+    config,
     keys: [],
     labels: [],
     hiddenLabels: [],
@@ -109,10 +148,21 @@ export const createStateMachine: (config: Config) => Api = ({
   // want instantaneous. So we don't want to needlessly introduce complexity
   // by making api.* methods or dispatch return asynchronously.
   //
+  // We're still using a dispatch queue to ensure that the "extended state"
+  // (named data here) returned by a given action has been updated
+  // *before* any nested dispatch is executed.
+  //
   const dispatch = event => {
-    console.log('dispatch', event)
+    // console.log('dispatch', event)
     state = fsm.transition(state, event)
-    data = processActions(adapter, state, data, event, dispatch)
+    const queue = []
+    const dispatchAfter = (...args) => {
+      queue.push(args)
+    }
+    data = processActions(adapter, state, data, event, dispatchAfter)
+    queue.forEach(args => {
+      (<any> dispatch)(...args)
+    })
   }
 
   const api = <Api> dispatcher(dispatch, {
@@ -144,31 +194,29 @@ const dispatcher = (
   return <{[name: string]: Function}> o
 }
 
-const defaultActions = {
-  pushKey: (state, {key}) => ({...state, keys: [...state.keys, key]}),
-  popKey: (state) => ({...state, keys: [...state.keys.slice(0, -1)]}),
-  resetKeys: (state) => ({...state, keys: []}),
-}
-
-const actionWrappers = {
-  filterLabels: (dispatch, handler) => (data, event) => {
-    const {visibleLabels: {length: n0}} = data
-    const newData = handler(data, event)
-    const {
-      keys: {length: nKeys},
-      numKeys,
-      visibleLabels: {length: n1},
-    } = newData
-    if (nKeys > 0) {
-      if (n1 === 1 && nKeys === numKeys) {
-        const label = newData.visibleLabels[0]
-        dispatch({type: 'JUMP', label})
-      } else if (n0 <= n1) {
-        dispatch({...event, type: 'NO_MATCH'})
+const filterLabels = data => {
+  const {labels, keys} = data
+  let visibleLabels, hiddenLabels
+  if (keys.length === 0) {
+    visibleLabels = labels
+    hiddenLabels = []
+  } else {
+    const test = createLabelMatcher(data)
+    visibleLabels = labels
+    hiddenLabels = []
+    visibleLabels = data.visibleLabels.filter(label => {
+      if (test(label)) {
+        return true
       } else {
-        dispatch({...event, type: 'MATCH'})
+        hiddenLabels.push(label)
+        return false
       }
-    }
+    })
+  }
+  return {
+    ...data,
+    visibleLabels,
+    hiddenLabels,
   }
 }
 
@@ -187,11 +235,10 @@ const processActions = (
     const wrapper = actionWrappers[action]
     if (wrapper) {
       handler = wrapper(dispatch, handler)
-    }
-    if (!handler) {
+    } else if (!handler) {
       throw new Error('Missing handler for action: ' + action)
     }
-    const result = handler(data, event)
+    const result = handler(data, event, dispatch)
     if (result !== undefined) {
       data = result
     }

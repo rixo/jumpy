@@ -9,6 +9,7 @@ const words_1 = require("./labelers/words");
 const tabs_1 = require("./labelers/tabs");
 const settings_1 = require("./labelers/settings");
 const tree_view_1 = require("./labelers/tree-view");
+const config_1 = require("./config");
 const configKeyPath = 'jumpy';
 const Adapter = ({ config, onBlur, onKey }) => {
     const keyboard = KeyboardManager({ onBlur, onKey });
@@ -18,15 +19,19 @@ const Adapter = ({ config, onBlur, onKey }) => {
         releaseKeyboard: keyboard.release,
         createLabels: labels.createLabels,
         destroyLabels: labels.destroyLabels,
-        filterLabels: labels.filterLabels,
-        jump: () => console.log('jump'),
+        updateLabels: labels.updateLabels,
+        // jump: (data, {label}) => console.log('jump', event.label),
+        jump: (data, { label }) => {
+            label.jump();
+        },
+        statusIdle: () => console.log('statusIdle'),
+        statusMatch: () => console.log('statusMatch'),
+        statusNoMatch: () => console.log('statusNoMatch'),
     };
 };
 const Labels = (config) => {
     const hasKeyLabel = label => label.keyLabel;
     const concatAll = (a, b) => a.concat(b);
-    const lc = s => s.toLowerCase();
-    const uc = s => s.toUpperCase();
     let labelManager = null;
     const createLabels = (data) => {
         labelManager = label_manager_1.default(config);
@@ -70,67 +75,25 @@ const Labels = (config) => {
         const empty = [];
         return Object.assign({}, data, { labels: empty, visibleLabels: empty, hiddenLabels: empty });
     };
-    const createTest = ({ keys, visibleLabels }) => {
-        const testIndex = keys.length - 1;
-        const character = keys.slice(-1)[0];
-        if (config.smartCaseMatch) {
-            const lcChar = lc(character);
-            const ucChar = uc(character);
-            const hasUpperCase = visibleLabels.some(({ keyLabel }) => keyLabel[testIndex] === ucChar);
-            const hasLowerCase = visibleLabels.some(({ keyLabel }) => keyLabel[testIndex] === lcChar);
-            const hasMixedCase = hasUpperCase && hasLowerCase;
-            return hasMixedCase
-                ? ({ keyLabel }) => keyLabel[testIndex] === character
-                : ({ keyLabel }) => lc(keyLabel[testIndex]) === lcChar;
-        }
-        else {
-            return ({ keyLabel }) => keyLabel[testIndex] === character;
-        }
-    };
-    const filterLabels = data => {
-        console.time('filterLabels');
-        const { labels, keys } = data;
-        let visibleLabels, hiddenLabels;
-        if (keys.length === 0) {
-            visibleLabels = labels;
-            hiddenLabels = [];
-            labels.forEach(({ element }) => {
-                if (element) {
-                    element.classList.remove('hot');
-                    element.classList.remove('irrelevant');
-                }
-            });
-        }
-        else {
-            const test = createTest(data);
-            hiddenLabels = [];
-            visibleLabels = data.visibleLabels.filter(label => {
-                const { element } = label;
-                if (test(label)) {
-                    if (element) {
-                        element.classList.remove('irrelevant');
-                        element.classList.add('hot');
-                    }
-                    return true;
-                }
-                else {
-                    hiddenLabels.push(label);
-                    if (element) {
-                        element.classList.remove('hot');
-                        element.classList.add('irrelevant');
-                    }
-                    return false;
-                }
-            });
-        }
-        console.timeEnd('filterLabels');
-        return Object.assign({}, data, { visibleLabels,
-            hiddenLabels });
+    const updateLabels = data => {
+        const { visibleLabels, hiddenLabels } = data;
+        visibleLabels.forEach(({ element }) => {
+            if (element) {
+                element.classList.add('hot');
+                element.classList.remove('irrelevant');
+            }
+        });
+        hiddenLabels.forEach(({ element }) => {
+            if (element) {
+                element.classList.remove('hot');
+                element.classList.add('irrelevant');
+            }
+        });
     };
     return {
         createLabels,
         destroyLabels,
-        filterLabels,
+        updateLabels,
     };
 };
 const KeyboardManager = ({ onBlur, onKey }) => {
@@ -188,25 +151,13 @@ exports.default = () => {
         fsm = null;
     }
     function init(config) {
-        config = Object.assign({ fontSize: `${config.fontSize * 100}%`, wordsPattern: new RegExp(config.matchPattern, 'g'), treeViewAutoSelect: true, useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false, settingsTargetSelectors: [
-                'a',
-                'button:not([tabIndex="-1"])',
-                'input:not([tabIndex="-1"])',
-                'select',
-                'atom-text-editor',
-                // we can't use .package-card selector directly because it
-                // matches the (unclickable) card in top of package detail
-                '.sub-section .package-card',
-                '.section.packages .package-card',
-                '.sub-section-heading.has-items$right',
-                '.repo-link',
-            ] }, config);
-        adapter = Adapter({
-            config,
+        config = config_1.parseConfig(config);
+        const bridge = {
             onBlur: () => fsm.cancel(),
             onKey: key => fsm.key(key),
-        });
-        fsm = state_machine_1.createStateMachine({ adapter });
+        };
+        adapter = Adapter(Object.assign({ config }, bridge));
+        fsm = state_machine_1.createStateMachine({ config, adapter });
     }
     function addCommands() {
         return atom.commands.add('atom-workspace', {

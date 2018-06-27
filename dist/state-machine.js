@@ -2,6 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const xstate_1 = require("xstate");
+const label_matcher_1 = require("./label-matcher");
 const fsm = xstate_1.Machine({
     key: 'jumpy',
     initial: 'idle',
@@ -13,11 +14,11 @@ const fsm = xstate_1.Machine({
             },
         },
         input: {
-            onEntry: ['grabKeyboard', 'createLabels'],
+            onEntry: ['grabKeyboard', 'createLabels', 'resetKeys'],
             onExit: ['releaseKeyboard', 'destroyLabels', 'statusIdle'],
             on: {
                 CANCEL: 'idle',
-                RESET: { '.first_key': { actions: ['resetKeys', 'filterLabels'] } },
+                RESET: { '.first_key': { actions: ['resetKeys', 'filterLabels', 'updateLabels'] } },
                 JUMP: [
                     { target: 'idle', actions: ['jump'] },
                 ],
@@ -29,27 +30,55 @@ const fsm = xstate_1.Machine({
                 first_key: {
                     on: {
                         // BACK: '#jumpy.idle',
-                        KEY: { first_key: { actions: ['pushKey', 'filterLabels'] } },
+                        KEY: { first_key: { actions: ['pushKey', 'filterLabels', 'updateLabels'] } },
                     },
                 },
                 partial_match: {
                     on: {
-                        KEY: { partial_match: { actions: ['pushKey', 'filterLabels'] } },
+                        KEY: { partial_match: { actions: ['pushKey', 'filterLabels', 'updateLabels'] } },
                     },
                 },
                 no_match: {
                     on: {
-                        KEY: { no_match: { actions: ['popKey', 'pushKey', 'filterLabels'] } },
+                        KEY: { no_match: { actions: ['popKey', 'pushKey', 'filterLabels', 'updateLabels'] } },
                     },
                 },
             },
         },
     },
 });
-exports.createStateMachine = ({ numKeys = 2, adapter, }) => {
+const defaultActions = {
+    pushKey: (data, { key }) => (Object.assign({}, data, { keys: [...data.keys, key] })),
+    popKey: (data) => (Object.assign({}, data, { keys: [...data.keys.slice(0, -1)] })),
+    resetKeys: (data) => (Object.assign({}, data, { keys: [] })),
+};
+const actionWrappers = {
+    filterLabels: (dispatch, handler) => (data, event) => {
+        const { visibleLabels: { length: n0 } } = data;
+        // if filterLabels is provided in adapter, it completely
+        // overrides filtering logic (only)
+        const actualFilterLabels = handler || filterLabels;
+        const newData = actualFilterLabels(data, event);
+        const { config: { numKeys }, keys: { length: nKeys }, visibleLabels: { length: n1 }, } = newData;
+        if (nKeys > 0) {
+            if (n1 === 1 && nKeys === numKeys) {
+                const label = newData.visibleLabels[0];
+                dispatch({ type: 'JUMP', label });
+            }
+            else if (n0 <= n1) {
+                dispatch(Object.assign({}, event, { type: 'NO_MATCH' }));
+            }
+            else {
+                dispatch(Object.assign({}, event, { type: 'MATCH' }));
+            }
+        }
+        return newData;
+    }
+};
+exports.createStateMachine = ({ config, adapter, }) => {
     let state = fsm.initialState;
     let data = {
-        numKeys,
+        config,
         keys: [],
         labels: [],
         hiddenLabels: [],
@@ -70,10 +99,21 @@ exports.createStateMachine = ({ numKeys = 2, adapter, }) => {
     // want instantaneous. So we don't want to needlessly introduce complexity
     // by making api.* methods or dispatch return asynchronously.
     //
+    // We're still using a dispatch queue to ensure that the "extended state"
+    // (named data here) returned by a given action has been updated
+    // *before* any nested dispatch is executed.
+    //
     const dispatch = event => {
-        console.log('dispatch', event);
+        // console.log('dispatch', event)
         state = fsm.transition(state, event);
-        data = processActions(adapter, state, data, event, dispatch);
+        const queue = [];
+        const dispatchAfter = (...args) => {
+            queue.push(args);
+        };
+        data = processActions(adapter, state, data, event, dispatchAfter);
+        queue.forEach(args => {
+            dispatch(...args);
+        });
     };
     const api = dispatcher(dispatch, {
         getState: () => state.value,
@@ -98,29 +138,29 @@ const dispatcher = (dispatch, o) => {
     });
     return o;
 };
-const defaultActions = {
-    pushKey: (state, { key }) => (Object.assign({}, state, { keys: [...state.keys, key] })),
-    popKey: (state) => (Object.assign({}, state, { keys: [...state.keys.slice(0, -1)] })),
-    resetKeys: (state) => (Object.assign({}, state, { keys: [] })),
-};
-const actionWrappers = {
-    filterLabels: (dispatch, handler) => (data, event) => {
-        const { visibleLabels: { length: n0 } } = data;
-        const newData = handler(data, event);
-        const { keys: { length: nKeys }, numKeys, visibleLabels: { length: n1 }, } = newData;
-        if (nKeys > 0) {
-            if (n1 === 1 && nKeys === numKeys) {
-                const label = newData.visibleLabels[0];
-                dispatch({ type: 'JUMP', label });
-            }
-            else if (n0 <= n1) {
-                dispatch(Object.assign({}, event, { type: 'NO_MATCH' }));
+const filterLabels = data => {
+    const { labels, keys } = data;
+    let visibleLabels, hiddenLabels;
+    if (keys.length === 0) {
+        visibleLabels = labels;
+        hiddenLabels = [];
+    }
+    else {
+        const test = label_matcher_1.createLabelMatcher(data);
+        visibleLabels = labels;
+        hiddenLabels = [];
+        visibleLabels = data.visibleLabels.filter(label => {
+            if (test(label)) {
+                return true;
             }
             else {
-                dispatch(Object.assign({}, event, { type: 'MATCH' }));
+                hiddenLabels.push(label);
+                return false;
             }
-        }
+        });
     }
+    return Object.assign({}, data, { visibleLabels,
+        hiddenLabels });
 };
 const processActions = (adapter, state, data, event, dispatch) => {
     for (const action of state.actions) {
@@ -132,10 +172,10 @@ const processActions = (adapter, state, data, event, dispatch) => {
         if (wrapper) {
             handler = wrapper(dispatch, handler);
         }
-        if (!handler) {
+        else if (!handler) {
             throw new Error('Missing handler for action: ' + action);
         }
-        const result = handler(data, event);
+        const result = handler(data, event, dispatch);
         if (result !== undefined) {
             data = result;
         }

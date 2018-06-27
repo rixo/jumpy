@@ -9,10 +9,15 @@ import getWordLabels from './labelers/words'
 import getTabLabels from './labelers/tabs'
 import getSettingsLabels from './labelers/settings'
 import getTreeViewLabels from './labelers/tree-view'
+import {Config, parseConfig} from './config'
 
 const configKeyPath = 'jumpy'
 
-const Adapter = ({config, onBlur, onKey}) => {
+const Adapter = ({
+  config, onBlur, onKey
+}: {
+  config: Config, onBlur: Function, onKey: Function
+}) => {
   const keyboard = KeyboardManager({onBlur, onKey})
   const labels = Labels(config)
   return {
@@ -20,16 +25,20 @@ const Adapter = ({config, onBlur, onKey}) => {
     releaseKeyboard: keyboard.release,
     createLabels: labels.createLabels,
     destroyLabels: labels.destroyLabels,
-    filterLabels: labels.filterLabels,
-    jump: () => console.log('jump'),
+    updateLabels: labels.updateLabels,
+    // jump: (data, {label}) => console.log('jump', event.label),
+    jump: (data, {label}) => {
+      label.jump()
+    },
+    statusIdle: () => console.log('statusIdle'),
+    statusMatch: () => console.log('statusMatch'),
+    statusNoMatch: () => console.log('statusNoMatch'),
   }
 }
 
 const Labels = (config) => {
   const hasKeyLabel = label => label.keyLabel
   const concatAll = (a, b) => a.concat(b)
-  const lc = s => s.toLowerCase()
-  const uc = s => s.toUpperCase()
 
   let labelManager = null
 
@@ -93,73 +102,26 @@ const Labels = (config) => {
     }
   }
 
-  const createTest = ({keys, visibleLabels}) => {
-    const testIndex = keys.length - 1
-    const character = keys.slice(-1)[0]
-    if (config.smartCaseMatch) {
-      const lcChar = lc(character)
-      const ucChar = uc(character)
-      const hasUpperCase = visibleLabels.some(
-        ({keyLabel}) => keyLabel[testIndex] === ucChar
-      )
-      const hasLowerCase = visibleLabels.some(
-        ({keyLabel}) => keyLabel[testIndex] === lcChar
-      )
-      const hasMixedCase = hasUpperCase && hasLowerCase
-      return hasMixedCase
-        ? ({keyLabel}) => keyLabel[testIndex] === character
-        : ({keyLabel}) => lc(keyLabel[testIndex]) === lcChar
-    } else {
-      return ({keyLabel}) => keyLabel[testIndex] === character
-    }
-  }
-
-  const filterLabels = data => {
-    console.time('filterLabels')
-    const {labels, keys} = data
-    let visibleLabels, hiddenLabels
-    if (keys.length === 0) {
-      visibleLabels = labels
-      hiddenLabels = []
-      labels.forEach(({element}) => {
-        if (element) {
-          element.classList.remove('hot')
-          element.classList.remove('irrelevant')
-        }
-      })
-    } else {
-      const test = createTest(data)
-      hiddenLabels = []
-      visibleLabels = data.visibleLabels.filter(label => {
-        const {element} = label
-        if (test(label)) {
-          if (element) {
-            element.classList.remove('irrelevant')
-            element.classList.add('hot')
-          }
-          return true
-        } else {
-          hiddenLabels.push(label)
-          if (element) {
-            element.classList.remove('hot')
-            element.classList.add('irrelevant')
-          }
-          return false
-        }
-      })
-    }
-    console.timeEnd('filterLabels')
-    return {
-      ...data,
-      visibleLabels,
-      hiddenLabels,
-    }
+  const updateLabels = data => {
+    const {visibleLabels, hiddenLabels} = data
+    visibleLabels.forEach(({element}) => {
+      if (element) {
+        element.classList.add('hot')
+        element.classList.remove('irrelevant')
+      }
+    })
+    hiddenLabels.forEach(({element}) => {
+      if (element) {
+        element.classList.remove('hot')
+        element.classList.add('irrelevant')
+      }
+    })
   }
 
   return {
     createLabels,
     destroyLabels,
-    filterLabels,
+    updateLabels,
   }
 }
 
@@ -231,32 +193,13 @@ export default () => {
   }
 
   function init(config) {
-    config = {
-      fontSize: `${config.fontSize * 100}%`,
-      wordsPattern: new RegExp(config.matchPattern, 'g'),
-      treeViewAutoSelect: true,
-      useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false,
-      settingsTargetSelectors: [ // TODO config
-        'a',
-        'button:not([tabIndex="-1"])',
-        'input:not([tabIndex="-1"])',
-        'select',
-        'atom-text-editor',
-        // we can't use .package-card selector directly because it
-        // matches the (unclickable) card in top of package detail
-        '.sub-section .package-card', // "Packages" section
-        '.section.packages .package-card', // "Installed" section
-        '.sub-section-heading.has-items$right',
-        '.repo-link',
-      ],
-      ...config,
-    }
-    adapter = Adapter({
-      config,
+    config = parseConfig(config)
+    const bridge = {
       onBlur: () => fsm.cancel(),
       onKey: key => fsm.key(key),
-    })
-    fsm = createStateMachine({adapter})
+    }
+    adapter = Adapter({config, ...bridge})
+    fsm = createStateMachine({config, adapter})
   }
 
   function addCommands() {

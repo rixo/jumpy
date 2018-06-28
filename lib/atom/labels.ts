@@ -13,6 +13,7 @@ interface Labels {
   createLabels: (data: Data) => Data,
   destroyLabels: (data: Data) => Data,
   updateLabels: (data: Data) => void,
+  flashNoMatch: () => void,
 }
 
 export default (config): Labels => {
@@ -82,9 +83,9 @@ export default (config): Labels => {
   }
 
   const updateLabels = (data: Data): void => {
-    const {visibleLabels, hiddenLabels, keys} = data
+    const {labels, visibleLabels, hiddenLabels, keys} = data
     if (keys.length === 0) {
-      visibleLabels.forEach(({element}) => {
+      labels.forEach(({element}) => {
         if (element) {
           element.classList.remove('hot')
           element.classList.remove('irrelevant')
@@ -106,9 +107,21 @@ export default (config): Labels => {
     }
   }
 
+  const flashNoMatch = () => {
+    if (!labelManager) {
+      return
+    }
+    const {element} = labelManager
+    const flash = document.createElement('div')
+    flash.classList.add('jumpy-no-match-flash')
+    element.appendChild(flash)
+    setTimeout(() => flash.remove(), 500)
+  }
+
   return {
     createLabels,
     destroyLabels,
     updateLabels,
+    flashNoMatch,
   }
 }

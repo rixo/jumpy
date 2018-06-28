@@ -21,6 +21,7 @@ export interface Config {
   customKeys: string[]
   customKeysLeft: string[]
   customKeysRight: string[]
+  flashNoMatch: boolean
 }
 
 export const parseConfig = (config): Config => ({
@@ -128,5 +129,10 @@ export default {
     + "preferAlternateHands is `true`.",
     type: 'array',
     default: 'uiophjklmn'.split(''),
+  },
+  flashNoMatch: {
+    description: "Flash when there is no match.",
+    type: 'boolean',
+    default: false,
   },
 }

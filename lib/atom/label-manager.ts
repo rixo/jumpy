@@ -30,6 +30,7 @@ export interface LabelManager {
   addEditorLabel: addEditorLabel
   render: () => void
   destroy: () => void
+  element: HTMLElement
 }
 
 type TextEditorLocator = (row: number, col: number) => ({
@@ -137,6 +138,7 @@ export default (settings): LabelManager => {
   const render = () => document.body.appendChild(layer)
   const destroy = () => layer.remove()
   return {
+    element: layer,
     createLabel,
     animateBeacon,
     addLabel,

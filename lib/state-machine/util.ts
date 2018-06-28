@@ -83,6 +83,7 @@ const createDispatch = (sm: AnyStateMachine, {
   // *before* any nested dispatch is executed.
   //
   const dispatch = function(event: Event) {
+    event = normalizeEvent(event)
     sm.state = machine.transition(sm.state, event, sm.data)
     const queue = []
     const dispatchAfter = (...args) => {
@@ -124,7 +125,11 @@ const createActionProcessor = ({
         throw new Error('Unsuppoted action type: ' + typeof action)
       }
       const handler = getHandler(action, dispatch)
-      const result = handler(data, event, {state, dispatch})
+      const result = handler(data, event, {
+        state,
+        dispatch,
+        getHandler: action => getHandler(action, dispatch),
+      })
       if (result !== undefined) {
         data = result
       }
@@ -185,3 +190,7 @@ export const createApi = (
     .reduce(concatAll, []) // => [name, handler][]
     .map(resolveDispatchStrings(stateMachine))
     .reduce(mergeObject, {}) // => {a: () => {}, b: () => {}, ...}
+
+const normalizeEvent = event => typeof event === 'string'
+  ? {type: event}
+  : event

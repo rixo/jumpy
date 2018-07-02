@@ -103,5 +103,10 @@ exports.default = {
         type: 'array',
         default: 'uiophjklmn'.split(''),
     },
+    flashNoMatch: {
+        description: "Flash when there is no match.",
+        type: 'boolean',
+        default: false,
+    },
 };
 //# sourceMappingURL=config.js.map

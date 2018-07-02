@@ -82,6 +82,7 @@ exports.default = (settings) => {
     const render = () => document.body.appendChild(layer);
     const destroy = () => layer.remove();
     return {
+        element: layer,
         createLabel: create_label_1.default,
         animateBeacon: animate_beacon_1.default,
         addLabel,

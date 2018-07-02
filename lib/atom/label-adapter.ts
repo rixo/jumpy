@@ -7,16 +7,11 @@ import getWordLabels from '../labelers/words'
 import getTabLabels from '../labelers/tabs'
 import getSettingsLabels from '../labelers/settings'
 import getTreeViewLabels from '../labelers/tree-view'
-import {Data} from '../state-machine'
+import {Data, LabelAdapter, FlashAdapter} from '../state-machine'
 
-interface Labels {
-  createLabels: (data: Data) => Data,
-  destroyLabels: (data: Data) => Data,
-  updateLabels: (data: Data) => void,
-  flashNoMatch: () => void,
-}
+interface Adapter extends LabelAdapter, FlashAdapter {}
 
-export default (config): Labels => {
+export default (config): Adapter => {
   const hasKeyLabel = label => label.keyLabel
   const concatAll = (a, b) => a.concat(b)
 
@@ -122,6 +117,13 @@ export default (config): Labels => {
     createLabels,
     destroyLabels,
     updateLabels,
+    jump: (data: Data, {label}) => {
+      const {config: {useHomingBeaconEffectOnJumps}} = data
+      if (useHomingBeaconEffectOnJumps) {
+        label.animateBeacon()
+      }
+      label.jump()
+    },
     flashNoMatch,
   }
 }

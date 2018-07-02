@@ -9,12 +9,22 @@ lines
 `
 
 describe('jumpy visual mode selection', () => {
-  let jumpy
   let editor
   // vim emulation is not top notch yet
   let hasVim = false
 
-  const getStateMachine = () => jumpy.core.stateMachineCache.stateMachine
+  const toggle = () => {
+    const workspace = atom.views.getView(atom.workspace)
+    return Promise.all([
+      atom.packages.activatePackage('jumpy'),
+      atom.commands.dispatch(workspace, 'jumpy:toggle'),
+    ]).then(() => {
+      const pack = atom.packages.getActivePackage('jumpy')
+      const jumpy = pack.mainModule
+      const stateMachine = jumpy.core.getStateMachine()
+      return stateMachine
+    })
+  }
 
   beforeEach(async () => {
     try {
@@ -80,11 +90,10 @@ describe('jumpy visual mode selection', () => {
   }
 
   const jump = (row, col, callback) => {
-    const {element} = atom.workspace.getActiveTextEditor()
     atom.config.set('jumpy.matchPattern', '.')
     atom.config.set('jumpy.useBuiltInRegexMatchAllTheThings', false)
-    const promise = atom.commands.dispatch(element, 'jumpy:toggle').then(() => {
-      const {api, data: {visibleLabels}} = getStateMachine()
+    const promise = toggle().then(stateMachine => {
+      const {api, data: {visibleLabels}} = stateMachine
       const label = visibleLabels.find(
         ({lineNumber, column}) => row === lineNumber && col === column
       )
@@ -104,22 +113,14 @@ describe('jumpy visual mode selection', () => {
     return promise
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const workspaceElement = atom.views.getView(atom.workspace)
     workspaceElement.style.height = '5000px'
     workspaceElement.style.width = '5000px'
     jasmine.attachToDOM(workspaceElement)
-    return Promise.all([
-      atom.packages.activatePackage('jumpy'),
-      // atom.packages.activatePackage('status-bar'),
-      atom.workspace.open(),
-    ]).then(() => {
-      const pack = atom.packages.getActivePackage('jumpy')
-      jumpy = pack.mainModule
-    }).then(() => {
-      editor = atom.workspace.getActiveTextEditor()
-      editor.setText(code)
-    })
+    await atom.workspace.open()
+    editor = atom.workspace.getActiveTextEditor()
+    editor.setText(code)
   })
 
   //////////////////////////////////////////////////////////////////////////////

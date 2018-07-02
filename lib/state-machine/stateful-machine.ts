@@ -27,7 +27,7 @@ type Params = {
 }
 
 // Assembles a stateful state machine from a stateless xstate Machine,
-// action handlers, and initial data
+// action handlers, and initial data.
 export const createStatefulMachine = <Data, A extends Api> (params: Params) => {
   const {fsm, data, ApiSpec} = params
 
@@ -83,7 +83,7 @@ const createDispatch = (sm: AnyStateMachine, {
   // *before* any nested dispatch is executed.
   //
   const dispatch = function(event: Event) {
-    event = normalizeEvent(event)
+    event = normalizeEvent(event) // ensure event is an object {type: 't', ...}
     sm.state = machine.transition(sm.state, event, sm.data)
     const queue = []
     const dispatchAfter = (...args) => {

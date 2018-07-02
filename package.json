@@ -17,16 +17,24 @@
     "plugin",
     "extension"
   ],
+  "scripts": {
+    "clean": "rm -r dist/*",
+    "link-js": "mkdir -p dist/labelers && ln -sf ../../lib/labelers/words-regex-match-all-the-things.js dist/labelers/",
+    "build": "npm run link-js && node_modules/.bin/tsc -p lib",
+    "clean-build": "npm run clean && npm run build",
+    "test": "apm test"
+  },
   "repository": "https://github.com/DavidLGoldberg/jumpy",
   "license": "MIT",
   "engines": {
     "atom": ">0.50.0"
   },
+  "activationCommands": {"atom-workspace": "jumpy:toggle"},
   "atomTestRunner": "./spec/jasmine3-runner",
   "consumedServices": {
     "status-bar": {
       "versions": {
-        "^1.0.0": "consumeToolbar"
+        "^1.0.0": "consumeStatusBar"
       }
     },
     "vim-mode-plus": {

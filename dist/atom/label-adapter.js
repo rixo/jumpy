@@ -54,9 +54,9 @@ exports.default = (config) => {
         return Object.assign({}, data, { labels: empty, visibleLabels: empty, hiddenLabels: empty });
     };
     const updateLabels = (data) => {
-        const { visibleLabels, hiddenLabels, keys } = data;
+        const { labels, visibleLabels, hiddenLabels, keys } = data;
         if (keys.length === 0) {
-            visibleLabels.forEach(({ element }) => {
+            labels.forEach(({ element }) => {
                 if (element) {
                     element.classList.remove('hot');
                     element.classList.remove('irrelevant');
@@ -78,10 +78,28 @@ exports.default = (config) => {
             });
         }
     };
+    const flashNoMatch = () => {
+        if (!labelManager) {
+            return;
+        }
+        const { element } = labelManager;
+        const flash = document.createElement('div');
+        flash.classList.add('jumpy-no-match-flash');
+        element.appendChild(flash);
+        setTimeout(() => flash.remove(), 500);
+    };
     return {
         createLabels,
         destroyLabels,
         updateLabels,
+        jump: (data, { label }) => {
+            const { config: { useHomingBeaconEffectOnJumps } } = data;
+            if (useHomingBeaconEffectOnJumps) {
+                label.animateBeacon();
+            }
+            label.jump();
+        },
+        flashNoMatch,
     };
 };
-//# sourceMappingURL=labels.js.map
+//# sourceMappingURL=label-adapter.js.map

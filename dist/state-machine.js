@@ -2,9 +2,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const xstate_1 = require("xstate");
-const util_1 = require("./state-machine/util");
-const label_matcher_1 = require("./label-matcher");
-const refreshLabels = ['filterLabels', 'updateLabels'];
+const stateful_machine_1 = require("./state-machine/stateful-machine");
+const actions_1 = require("./state-machine/actions");
+const reset = ['resetKeys', 'resetLabels', 'statusClear'];
 const fsm = xstate_1.Machine({
     key: 'jumpy',
     initial: 'idle',
@@ -19,7 +19,7 @@ const fsm = xstate_1.Machine({
         input: {
             onEntry: [
                 'setCallbacks',
-                'resetKeys',
+                ...reset,
                 'focus',
                 'grabKeyboard',
                 'createLabels',
@@ -32,101 +32,50 @@ const fsm = xstate_1.Machine({
             ],
             on: {
                 CANCEL: 'idle',
-                RESET: { '.first_key': { actions: ['resetKeys', ...refreshLabels] } },
-                NO_MATCH: { '.no_match': { actions: ['statusNoMatch'] } },
-                MATCH: { '.partial_match': { actions: ['statusMatch'] } },
+                RESET: { '.wait_key': {
+                        actions: [
+                            ...reset,
+                            'updateLabels',
+                        ],
+                    } },
+                KEY: { '.new_key': { actions: ['pushKey'] } },
+                BACK: [{
+                        target: '.wait_key',
+                        actions: [...reset, 'updateLabels'],
+                        cond: ({ keys }) => keys.length === 1,
+                    }, {
+                        target: '.new_key',
+                        actions: ['popKey'],
+                        cond: ({ keys }) => keys.length > 0,
+                    }, {
+                        target: 'idle',
+                    }],
+                NO_MATCH: '.no_match',
+                MATCH: '.partial_match',
                 JUMP: { idle: { actions: ['jump'] } },
             },
-            initial: 'first_key',
+            initial: 'wait_key',
             states: {
-                first_key: {
-                    on: {
-                        KEY: { first_key: { actions: ['pushKey', ...refreshLabels] } },
-                        BACK: '#jumpy.idle',
-                    },
-                },
-                partial_match: {
-                    on: {
-                        KEY: { partial_match: { actions: ['pushKey', ...refreshLabels] } },
-                        BACK: [{
-                                target: 'first_key',
-                                actions: ['resetKeys', ...refreshLabels],
-                                cond: ({ keys }) => keys.length - 1 === 0,
-                            }, {
-                                target: 'partial_match',
-                                actions: ['popKey', ...refreshLabels],
-                            }],
-                    },
+                wait_key: {},
+                // applyKey will reroute to partial_match/no_match
+                new_key: {
+                    onEntry: ['applyKeys'],
                 },
                 no_match: {
-                    on: {
-                        KEY: { no_match: { actions: ['popKey', 'pushKey', ...refreshLabels] } },
-                        BACK: [{
-                                target: 'first_key',
-                                actions: ['resetKeys', ...refreshLabels],
-                                cond: ({ keys }) => keys.length - 1 === 0,
-                            }, {
-                                target: 'no_match',
-                                actions: ['popKey', 'popKey', ...refreshLabels],
-                            }],
-                    },
+                    onEntry: [
+                        'popKey',
+                        'maybeFlashNoMatch',
+                        'updateLabels',
+                        'statusNoMatch',
+                    ],
                 },
+                partial_match: {
+                    onEntry: ['updateLabels', 'statusMatch'],
+                }
             },
         },
     },
 });
-const defaultActions = {
-    pushKey: (data, { key }) => (Object.assign({}, data, { keys: [...data.keys, key] })),
-    popKey: (data) => (Object.assign({}, data, { keys: [...data.keys.slice(0, -1)] })),
-    resetKeys: (data) => (Object.assign({}, data, { keys: [] })),
-    // setCallbacks: (data, {onJump, onCancel}) => ({
-    //   ...data,
-    //   callbacks: {onJump, onCancel},
-    // }),
-    // clearCallbacks: (data) => ({...data, callbacks: {}}),
-    setCallbacks: (data, event) => {
-        const { onJump, onCancel } = event;
-        console.log('setCallbacks', event);
-        return Object.assign({}, data, { callbacks: { onJump, onCancel } });
-    },
-    clearCallbacks: (data, event) => {
-        console.log('clearCallbacks', event);
-        return Object.assign({}, data, { callbacks: {} });
-    },
-};
-const actionWrappers = {
-    filterLabels: (dispatch, handler) => (data, event) => {
-        const { visibleLabels: { length: n0 } } = data;
-        // if filterLabels is provided in adapter, it completely
-        // overrides filtering logic (only)
-        const actualFilterLabels = handler || label_matcher_1.filterLabels;
-        const newData = actualFilterLabels(data, event);
-        const { config: { numKeys }, keys: { length: nKeys }, visibleLabels: { length: n1 }, } = newData;
-        if (nKeys > 0) {
-            if (n1 === 1 && nKeys === numKeys) {
-                const label = newData.visibleLabels[0];
-                dispatch({ type: 'JUMP', label });
-            }
-            else if (n0 <= n1) {
-                dispatch(Object.assign({}, event, { type: 'NO_MATCH' }));
-            }
-            else {
-                dispatch(Object.assign({}, event, { type: 'MATCH' }));
-            }
-        }
-        return newData;
-    },
-    jump: (dispatch, handler) => (data, event) => {
-        const { onJump } = data.callbacks;
-        if (onJump) {
-            const abort = onJump(event) === false;
-            if (abort) {
-                return;
-            }
-        }
-        return handler(data, event);
-    }
-};
 const ApiSpec = ({ dispatch }) => ({
     activate: (onJump, onCancel) => {
         dispatch({ type: 'ACTIVATE', onJump, onCancel });
@@ -147,13 +96,12 @@ const Data = (config) => ({
     callbacks: {},
 });
 // lower level than Api, useful for testing
-exports.createStateMachine = ({ config, adapter }) => util_1.createStatefulMachine({
+exports.createStateMachine = ({ config, adapter }) => stateful_machine_1.createStatefulMachine({
     fsm,
-    defaultActions,
-    actionWrappers,
+    defaultActions: actions_1.defaultActions,
+    actionWrappers: actions_1.actionWrappers,
     adapter,
     ApiSpec,
     data: Data(config),
 });
-exports.createStateMachineApi = params => exports.createStateMachine(params).api;
 //# sourceMappingURL=state-machine.js.map

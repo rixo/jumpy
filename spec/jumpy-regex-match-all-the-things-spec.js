@@ -96,7 +96,18 @@ describe('jumpy match all-the-things regex', () => {
     return chars.join('')
   }
 
-  const getData = () => jumpy.core.stateMachineCache.stateMachine.data
+  const getData = () => jumpy.core.getStateMachine().data
+
+  const toggle = () => {
+    const workspace = atom.views.getView(atom.workspace)
+    return Promise.all([
+      atom.packages.activatePackage('jumpy'),
+      atom.commands.dispatch(workspace, 'jumpy:toggle'),
+    ]).then(() => {
+      const pack = atom.packages.getActivePackage('jumpy')
+      jumpy = pack.mainModule
+    })
+  }
 
   const expectMatches = ({code, expected, options}) => async () => {
     const editor = atom.workspace.getActiveTextEditor()
@@ -114,7 +125,7 @@ describe('jumpy match all-the-things regex', () => {
       atom.config.set('jumpy.matchPattern', '.')
     }
 
-    await atom.commands.dispatch(element, 'jumpy:toggle')
+    await toggle()
     const {visibleLabels} = getData()
 
     const resultChars = Array.from(expected)
@@ -143,13 +154,9 @@ describe('jumpy match all-the-things regex', () => {
 
     jasmine.attachToDOM(workspaceElement)
 
-    return Promise.all([
-      atom.packages.activatePackage('jumpy'),
-      atom.workspace.open(),
-    ]).then(() => {
-      const pack = atom.packages.getActivePackage('jumpy')
-      jumpy = pack.mainModule
-    })
+    atom.packages.loadPackage('jumpy')
+
+    return atom.workspace.open()
   })
 
   const tests = loadTests()

@@ -28,10 +28,21 @@
 
 .jumpy-layer {
   position: absolute;
+  z-index: 2; // above tree-view
   top: 0;
   left: 0;
   bottom: 0;
   right: 0;
+}
+
+.jumpy-no-match-flash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  animation-name: flash;
+  animation-duration: 400ms;
 }
 
 .jumpy-hide-matched-chars {

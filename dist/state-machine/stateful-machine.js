@@ -2,7 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // Assembles a stateful state machine from a stateless xstate Machine,
-// action handlers, and initial data
+// action handlers, and initial data.
 exports.createStatefulMachine = (params) => {
     const { fsm, data, ApiSpec } = params;
     const stateMachine = {
@@ -47,6 +47,7 @@ const createDispatch = (sm, { fsm: machine, defaultActions, actionWrappers, adap
     // *before* any nested dispatch is executed.
     //
     const dispatch = function (event) {
+        event = normalizeEvent(event); // ensure event is an object {type: 't', ...}
         sm.state = machine.transition(sm.state, event, sm.data);
         const queue = [];
         const dispatchAfter = (...args) => {
@@ -79,7 +80,11 @@ const createActionProcessor = ({ defaultActions, actionWrappers, adapter, }) => 
                 throw new Error('Unsuppoted action type: ' + typeof action);
             }
             const handler = getHandler(action, dispatch);
-            const result = handler(data, event, { state, dispatch });
+            const result = handler(data, event, {
+                state,
+                dispatch,
+                getHandler: action => getHandler(action, dispatch),
+            });
             if (result !== undefined) {
                 data = result;
             }
@@ -130,4 +135,7 @@ exports.createApi = (stateMachine, ...specCreators) => specCreators
     .reduce(concatAll, []) // => [name, handler][]
     .map(resolveDispatchStrings(stateMachine))
     .reduce(mergeObject, {}); // => {a: () => {}, b: () => {}, ...}
-//# sourceMappingURL=util.js.map
+const normalizeEvent = event => typeof event === 'string'
+    ? { type: event }
+    : event;
+//# sourceMappingURL=stateful-machine.js.map

@@ -6,7 +6,7 @@ import {
   Api as GenericApi,
   Event,
   createStatefulMachine,
-} from './state-machine/util'
+} from './state-machine/stateful-machine'
 import {Config} from './config'
 import {Label} from './label-interface'
 import {defaultActions, actionWrappers} from './state-machine/actions'
@@ -32,21 +32,40 @@ type StateMachine = GenericStateMachine<Data, Api>
 
 type ActionHandler = (data: Data, event: Event) => Data | void
 
-export type Adapter = {
-  focus: ActionHandler
-  blur: ActionHandler
-  grabKeyboard: ActionHandler
-  releaseKeyboard: ActionHandler
+export interface LabelAdapter {
   createLabels: ActionHandler
   destroyLabels: ActionHandler
   updateLabels: ActionHandler // update labels elements (css classes)
   jump: ActionHandler
+}
+
+export interface FlashAdapter {
+  flashNoMatch: ActionHandler
+}
+
+export interface StatusAdapter {
   statusIdle?: ActionHandler
   statusClear?: ActionHandler
   statusMatch?: ActionHandler
   statusNoMatch?: ActionHandler
-  flashNoMatch?: ActionHandler
 }
+
+export interface KeyboardAdapter {
+  grabKeyboard: ActionHandler
+  releaseKeyboard: ActionHandler
+}
+
+export interface FocusAdapter {
+  focus: ActionHandler
+  blur: ActionHandler
+}
+
+export interface Adapter extends
+  FocusAdapter,
+  LabelAdapter,
+  KeyboardAdapter,
+  FlashAdapter,
+  StatusAdapter {}
 
 const reset = ['resetKeys', 'resetLabels', 'statusClear']
 const fsm = Machine({

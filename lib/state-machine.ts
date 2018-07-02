@@ -6,10 +6,10 @@ import {
   Api as GenericApi,
   Event,
   createStatefulMachine,
-} from './state-machine/stateful-machine'
+} from './util/stateful-machine'
 import {Config} from './config'
 import {Label} from './label-interface'
-import {defaultActions, actionWrappers} from './state-machine/actions'
+import {defaultActions, actionWrappers} from './state-machine-actions'
 
 export type Data = {
   config: Config

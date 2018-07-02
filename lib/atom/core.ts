@@ -6,9 +6,9 @@ import {
   Adapter,
 } from '../state-machine'
 import {Config, parseConfig} from '../config'
-import KeyboardManager from './keyboard-adapter'
-import Labels from './label-adapter'
-import Status from './status-adapter'
+import KeyboardManager from './adapter-keyboard'
+import Labels from './adapter-labels'
+import Status from './adapter-status'
 
 const configKeyPath = 'jumpy'
 

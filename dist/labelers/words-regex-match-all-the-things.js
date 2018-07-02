@@ -1,1 +1,0 @@
-../../lib/labelers/words-regex-match-all-the-things.js

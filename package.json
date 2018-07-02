@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "clean": "rm -r dist/*",
-    "link-js": "mkdir -p dist/labelers && ln -sf ../../lib/labelers/words-regex-match-all-the-things.js dist/labelers/",
+    "link-js": "mkdir -p dist/util && ln -sf ../../lib/util/regex-match-all-the-things.js dist/util/",
     "build": "npm run link-js && node_modules/.bin/tsc -p lib",
     "clean-build": "npm run clean && npm run build",
     "test": "apm test"

@@ -75,7 +75,7 @@ const createAddEditorLabel = (addLabel) => {
         }
     };
 };
-exports.default = (settings) => {
+const createLabelManager = (settings) => {
     const layer = createLayerElement(settings);
     const addLabel = createAddLabel(layer);
     const addEditorLabel = createAddEditorLabel(addLabel);
@@ -91,4 +91,5 @@ exports.default = (settings) => {
         destroy,
     };
 };
+exports.default = createLabelManager;
 //# sourceMappingURL=label-manager.js.map

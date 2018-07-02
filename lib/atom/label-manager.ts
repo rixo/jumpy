@@ -131,7 +131,7 @@ const createAddEditorLabel = (addLabel: addLabel): addEditorLabel => {
   }
 }
 
-export default (settings): LabelManager => {
+const createLabelManager = (settings): LabelManager => {
   const layer = createLayerElement(settings)
   const addLabel = createAddLabel(layer)
   const addEditorLabel = createAddEditorLabel(addLabel)
@@ -147,3 +147,5 @@ export default (settings): LabelManager => {
     destroy,
   }
 }
+
+export default createLabelManager

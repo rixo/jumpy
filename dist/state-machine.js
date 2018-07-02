@@ -2,8 +2,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const xstate_1 = require("xstate");
-const stateful_machine_1 = require("./state-machine/stateful-machine");
-const actions_1 = require("./state-machine/actions");
+const stateful_machine_1 = require("./util/stateful-machine");
+const state_machine_actions_1 = require("./state-machine-actions");
 const reset = ['resetKeys', 'resetLabels', 'statusClear'];
 const fsm = xstate_1.Machine({
     key: 'jumpy',
@@ -98,8 +98,8 @@ const Data = (config) => ({
 // lower level than Api, useful for testing
 exports.createStateMachine = ({ config, adapter }) => stateful_machine_1.createStatefulMachine({
     fsm,
-    defaultActions: actions_1.defaultActions,
-    actionWrappers: actions_1.actionWrappers,
+    defaultActions: state_machine_actions_1.defaultActions,
+    actionWrappers: state_machine_actions_1.actionWrappers,
     adapter,
     ApiSpec,
     data: Data(config),

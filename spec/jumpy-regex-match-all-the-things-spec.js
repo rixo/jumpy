@@ -1,6 +1,6 @@
 'use babel'
 
-import {build} from '../lib/labelers/words-regex-match-all-the-things'
+import {build} from '../lib/util/regex-match-all-the-things'
 import fs from 'fs'
 
 const formatResult = (resultAsString, expected, result, code) => `

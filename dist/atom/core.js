@@ -4,14 +4,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const atom_1 = require("atom");
 const state_machine_1 = require("../state-machine");
 const config_1 = require("../config");
-const keyboard_adapter_1 = require("./keyboard-adapter");
-const label_adapter_1 = require("./label-adapter");
-const status_adapter_1 = require("./status-adapter");
+const adapter_keyboard_1 = require("./adapter-keyboard");
+const adapter_labels_1 = require("./adapter-labels");
+const adapter_status_1 = require("./adapter-status");
 const configKeyPath = 'jumpy';
 const createAdapter = ({ config, statusBar, onBlur, onKey }) => {
-    const keyboard = keyboard_adapter_1.default({ onBlur, onKey });
-    const labels = label_adapter_1.default(config);
-    const { adapter: status = {}, destroy: destroyStatus = () => { }, } = statusBar && status_adapter_1.default(statusBar) || {};
+    const keyboard = adapter_keyboard_1.default({ onBlur, onKey });
+    const labels = adapter_labels_1.default(config);
+    const { adapter: status = {}, destroy: destroyStatus = () => { }, } = statusBar && adapter_status_1.default(statusBar) || {};
     const adapter = Object.assign({}, keyboard, labels, status || {}, { focus: () => {
             const workspaceEl = atom.views.getView(atom.workspace);
             workspaceEl.classList.add('jumpy-jump-mode');

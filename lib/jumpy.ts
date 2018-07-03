@@ -6,7 +6,7 @@ module.exports = {
   config,
   activate() {
     // lazy load implementation
-    const Core = require('./atom/core').default
+    const Core = require('./atom/atom-jumpy').default
     this.core = Core()
     this.core.activate()
   },

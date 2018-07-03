@@ -38,7 +38,7 @@ const statusActions = {
     statusMatch: () => { },
     statusNoMatch: () => { },
 };
-const ifConfigStatus = ({}, handler) => (data, event) => {
+const ifStatusEnabled = ({}, handler) => (data, event) => {
     const { config: { statusBar } } = data;
     if (statusBar) {
         return handler(data, event);
@@ -46,7 +46,7 @@ const ifConfigStatus = ({}, handler) => (data, event) => {
 };
 const statusWrappers = Object.keys(statusActions)
     .reduce((wrappers, action) => {
-    wrappers[action] = ifConfigStatus;
+    wrappers[action] = ifStatusEnabled;
     return wrappers;
 }, {});
 const callbackActions = {
@@ -58,7 +58,7 @@ const keyActions = {
     popKey: (data) => (Object.assign({}, data, { keys: [...data.keys.slice(0, -1)] })),
     resetKeys: (data) => (Object.assign({}, data, { keys: [] })),
 };
-exports.defaultActions = Object.assign({}, statusActions, callbackActions, keyActions, { applyKeys, resetLabels: (data) => (Object.assign({}, data, { visibleLabels: data.labels, hiddenLabels: [] })), maybeFlashNoMatch: (data, event, utils) => {
+exports.defaultActions = Object.assign({ setConfig: (data, { config }) => (Object.assign({}, data, { config })) }, statusActions, callbackActions, keyActions, { applyKeys, resetLabels: (data) => (Object.assign({}, data, { visibleLabels: data.labels, hiddenLabels: [] })), maybeFlashNoMatch: (data, event, utils) => {
         const { getHandler } = utils;
         if (data.config.flashNoMatch) {
             const handler = getHandler('flashNoMatch');

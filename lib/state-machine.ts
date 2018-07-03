@@ -21,6 +21,7 @@ export type Data = {
 }
 
 interface Api extends GenericApi {
+  setConfig(config: Config): void
   activate(): void
   cancel(): void
   back(): void
@@ -79,6 +80,7 @@ const fsm = Machine({
       onEntry: ['clearCallbacks'],
       on: {
         ACTIVATE: 'input',
+        SET_CONFIG: {idle: {actions: ['setConfig']}},
       },
     },
     input: <any> {
@@ -96,6 +98,7 @@ const fsm = Machine({
         'statusIdle',
       ],
       on: {
+        SET_CONFIG: {input: {actions: ['setConfig']}},
         CANCEL: 'idle',
         RESET: {'.wait_key': {actions: [...reset, 'updateLabels']}},
         KEY: {'.new_key': {actions: ['pushKey']}},
@@ -138,6 +141,9 @@ const fsm = Machine({
 })
 
 const ApiSpec = ({dispatch}) => ({
+  setConfig: (config: Config) => {
+    dispatch({type: 'SET_CONFIG', config})
+  },
   activate: (onJump, onCancel) => {
     dispatch({type: 'ACTIVATE', onJump, onCancel})
   },

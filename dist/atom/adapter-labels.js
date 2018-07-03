@@ -5,10 +5,10 @@ const keyset_1 = require("../keyset");
 const label_manager_1 = require("./adapter-labels/label-manager");
 const editor_coords_1 = require("./adapter-labels/editor-coords");
 const labelers_1 = require("./labelers");
-exports.default = (config) => {
-    const hasKeyLabel = label => label.keyLabel;
+exports.default = () => {
     let labelManager = null;
     const createLabels = (data) => {
+        const config = data.config;
         const getCoordsInEditor = editor_coords_1.createTextEditorLocators();
         labelManager = label_manager_1.createLabelManager(config);
         const environment = {
@@ -17,24 +17,19 @@ exports.default = (config) => {
             getCoordsInEditor,
         };
         const { wordLabels, allLabels } = labelers_1.getLabels(environment);
-        let visibleLabels = allLabels;
-        // assign keys
-        const keyset = keyset_1.getKeySet(config);
-        visibleLabels = visibleLabels
-            .map(keyset.assignKeyLabel(visibleLabels.length, wordLabels.length))
-            // exclude labels with no assigned keyset
-            .filter(hasKeyLabel);
-        // render
-        const isRendered = ({ element }) => !!element;
-        const renderLabel = label => { label.drawLabel(); };
-        visibleLabels
-            .forEach(renderLabel);
-        visibleLabels = visibleLabels
+        const visibleLabels = allLabels
+            // assign keys
+            .map(assignKeyLabel(config, allLabels, wordLabels))
+            .filter(hasKeyLabel)
+            // render
+            .map(renderLabel)
             .filter(isRendered);
-        visibleLabels
-            .forEach(labelManager.addLabel);
+        visibleLabels.forEach(labelManager.addLabel);
         labelManager.layer.render();
-        return Object.assign({}, data, { labels: visibleLabels, visibleLabels, hiddenLabels: [] });
+        return Object.assign({}, data, { 
+            // only keep initially visible labels (non visible ones either
+            // miss keyLabel or element)
+            labels: visibleLabels, visibleLabels, hiddenLabels: [] });
     };
     const destroyLabels = (data) => {
         if (labelManager) {
@@ -99,5 +94,17 @@ exports.default = (config) => {
         },
         flashNoMatch,
     };
+};
+const hasKeyLabel = label => label.keyLabel;
+const assignKeyLabel = (config, allLabels, primaryLabels) => {
+    const keyset = keyset_1.getKeySet(config);
+    const primaryCount = primaryLabels.length;
+    const allCount = allLabels.length;
+    return keyset.assignKeyLabel(allCount, primaryCount);
+};
+const isRendered = ({ element }) => !!element;
+const renderLabel = label => {
+    label.drawLabel();
+    return label;
 };
 //# sourceMappingURL=adapter-labels.js.map

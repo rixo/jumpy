@@ -1,25 +1,22 @@
 'use babel'
 
-import {CompositeDisposable} from 'atom'
+import {parseConfig} from '../config'
 import {createStateMachine, Adapter} from '../state-machine'
-import {Config, parseConfig} from '../config'
 import KeyboardManager from './adapter-keyboard'
 import Labels from './adapter-labels'
 import Status from './adapter-status'
 import Focus from './adapter-focus'
 
-const configKeyPath = 'jumpy'
-
 type StatusBar = any
 
 const createAdapter = ({
-  config, statusBar, onBlur, onKey
+  statusBar, onBlur, onKey
 }: {
-  config: Config, statusBar: StatusBar, onBlur: Function, onKey: Function
+  statusBar: StatusBar, onBlur: Function, onKey: Function
 }): {adapter: Adapter, destroy()} => {
   const focus = Focus()
   const keyboard = KeyboardManager({onBlur, onKey})
-  const labels = Labels(config)
+  const labels = Labels()
   const {
     adapter: status = {},
     destroy: destroyStatus = () => {},
@@ -36,7 +33,9 @@ const createAdapter = ({
   return {adapter, destroy}
 }
 
-const createStateMachineCache = () => {
+// Recreates the state machine when needed, using the last config
+// and status bar service.
+export const createFactory = () => {
   let lastConfig = null
   let statusBar = null
   let stateMachine = null
@@ -68,7 +67,7 @@ const createStateMachineCache = () => {
       onBlur: () => api.cancel(),
       onKey: key => api.key(key),
     }
-    adapter = createAdapter({config, statusBar, ...bridge})
+    adapter = createAdapter({statusBar, ...bridge})
     stateMachine = createStateMachine({config, adapter: adapter.adapter})
     const {api} = stateMachine
   }
@@ -87,49 +86,5 @@ const createStateMachineCache = () => {
     getStateMachine,
     withStateMachine,
     disposable,
-  }
-}
-
-export default () => {
-  const stateMachineCache = createStateMachineCache()
-  const {
-    setConfig,
-    setStatusBar,
-    getStateMachine,
-    withStateMachine,
-    disposable: smcDisposable,
-  } = stateMachineCache
-  let disposable
-
-  const activate = () => {
-    disposable = new CompositeDisposable()
-    disposable.add(addCommands())
-    disposable.add(observeConfig())
-    disposable.add(smcDisposable)
-    // be ready for next command (from my observations, should have
-    // already been done by observeConfig but let's be double sure here)
-    setConfig(atom.config.get(configKeyPath))
-  }
-
-  const deactivate = () => {
-    disposable.dispose()
-    disposable = null
-  }
-
-  const addCommands = () => atom.commands.add('atom-workspace', {
-    [`jumpy:toggle`]: withStateMachine(({api}) => api.activate()),
-    [`jumpy:back`]: withStateMachine(({api}) => api.back()),
-    [`jumpy:reset`]: withStateMachine(({api}) => api.reset()),
-    [`jumpy:clear`]: withStateMachine(({api}) => api.cancel()),
-  })
-
-  const observeConfig = () => atom.config.observe(configKeyPath, setConfig)
-
-  return {
-    setStatusBar,
-    activate,
-    deactivate,
-    // for tests
-    getStateMachine,
   }
 }

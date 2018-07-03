@@ -1,18 +1,16 @@
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const atom_1 = require("atom");
-const state_machine_1 = require("../state-machine");
 const config_1 = require("../config");
+const state_machine_1 = require("../state-machine");
 const adapter_keyboard_1 = require("./adapter-keyboard");
 const adapter_labels_1 = require("./adapter-labels");
 const adapter_status_1 = require("./adapter-status");
 const adapter_focus_1 = require("./adapter-focus");
-const configKeyPath = 'jumpy';
-const createAdapter = ({ config, statusBar, onBlur, onKey }) => {
+const createAdapter = ({ statusBar, onBlur, onKey }) => {
     const focus = adapter_focus_1.default();
     const keyboard = adapter_keyboard_1.default({ onBlur, onKey });
-    const labels = adapter_labels_1.default(config);
+    const labels = adapter_labels_1.default();
     const { adapter: status = {}, destroy: destroyStatus = () => { }, } = statusBar && adapter_status_1.default(statusBar) || {};
     const adapter = Object.assign({}, focus, keyboard, labels, status || {});
     const destroy = () => {
@@ -20,7 +18,9 @@ const createAdapter = ({ config, statusBar, onBlur, onKey }) => {
     };
     return { adapter, destroy };
 };
-const createStateMachineCache = () => {
+// Recreates the state machine when needed, using the last config
+// and status bar service.
+exports.createFactory = () => {
     let lastConfig = null;
     let statusBar = null;
     let stateMachine = null;
@@ -48,7 +48,7 @@ const createStateMachineCache = () => {
             onBlur: () => api.cancel(),
             onKey: key => api.key(key),
         };
-        adapter = createAdapter(Object.assign({ config, statusBar }, bridge));
+        adapter = createAdapter(Object.assign({ statusBar }, bridge));
         stateMachine = state_machine_1.createStateMachine({ config, adapter: adapter.adapter });
         const { api } = stateMachine;
     };
@@ -66,36 +66,4 @@ const createStateMachineCache = () => {
         disposable,
     };
 };
-exports.default = () => {
-    const stateMachineCache = createStateMachineCache();
-    const { setConfig, setStatusBar, getStateMachine, withStateMachine, disposable: smcDisposable, } = stateMachineCache;
-    let disposable;
-    const activate = () => {
-        disposable = new atom_1.CompositeDisposable();
-        disposable.add(addCommands());
-        disposable.add(observeConfig());
-        disposable.add(smcDisposable);
-        // be ready for next command (from my observations, should have
-        // already been done by observeConfig but let's be double sure here)
-        setConfig(atom.config.get(configKeyPath));
-    };
-    const deactivate = () => {
-        disposable.dispose();
-        disposable = null;
-    };
-    const addCommands = () => atom.commands.add('atom-workspace', {
-        [`jumpy:toggle`]: withStateMachine(({ api }) => api.activate()),
-        [`jumpy:back`]: withStateMachine(({ api }) => api.back()),
-        [`jumpy:reset`]: withStateMachine(({ api }) => api.reset()),
-        [`jumpy:clear`]: withStateMachine(({ api }) => api.cancel()),
-    });
-    const observeConfig = () => atom.config.observe(configKeyPath, setConfig);
-    return {
-        setStatusBar,
-        activate,
-        deactivate,
-        // for tests
-        getStateMachine,
-    };
-};
-//# sourceMappingURL=core.js.map
+//# sourceMappingURL=atom-state-machine.js.map

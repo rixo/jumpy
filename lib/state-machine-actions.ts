@@ -47,7 +47,7 @@ const statusActions = {
   statusNoMatch: () => {},
 }
 
-const ifConfigStatus = ({}, handler) => (data: Data, event) => {
+const ifStatusEnabled = ({}, handler) => (data: Data, event) => {
   const {config: {statusBar}} = data
   if (statusBar) {
     return handler(data, event)
@@ -55,7 +55,7 @@ const ifConfigStatus = ({}, handler) => (data: Data, event) => {
 }
 const statusWrappers = Object.keys(statusActions)
   .reduce((wrappers, action) => {
-    wrappers[action] = ifConfigStatus
+    wrappers[action] = ifStatusEnabled
     return wrappers
   }, {})
 
@@ -74,6 +74,7 @@ const keyActions = {
 }
 
 export const defaultActions = {
+  setConfig: (data, {config}) => ({...data, config}),
   ...statusActions,
   ...callbackActions,
   ...keyActions,

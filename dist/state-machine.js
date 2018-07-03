@@ -14,6 +14,7 @@ const fsm = xstate_1.Machine({
             onEntry: ['clearCallbacks'],
             on: {
                 ACTIVATE: 'input',
+                SET_CONFIG: { idle: { actions: ['setConfig'] } },
             },
         },
         input: {
@@ -31,6 +32,7 @@ const fsm = xstate_1.Machine({
                 'statusIdle',
             ],
             on: {
+                SET_CONFIG: { input: { actions: ['setConfig'] } },
                 CANCEL: 'idle',
                 RESET: { '.wait_key': { actions: [...reset, 'updateLabels'] } },
                 KEY: { '.new_key': { actions: ['pushKey'] } },
@@ -72,6 +74,9 @@ const fsm = xstate_1.Machine({
     },
 });
 const ApiSpec = ({ dispatch }) => ({
+    setConfig: (config) => {
+        dispatch({ type: 'SET_CONFIG', config });
+    },
     activate: (onJump, onCancel) => {
         dispatch({ type: 'ACTIVATE', onJump, onCancel });
     },

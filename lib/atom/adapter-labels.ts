@@ -8,12 +8,13 @@ import {Data, LabelAdapter, FlashAdapter} from '../state-machine'
 
 interface Adapter extends LabelAdapter, FlashAdapter {}
 
-export default (config): Adapter => {
-  const hasKeyLabel = label => label.keyLabel
+export default (): Adapter => {
 
   let labelManager: LabelManager = null
 
   const createLabels = (data: Data): Data => {
+    const config = data.config
+
     const getCoordsInEditor = createTextEditorLocators()
 
     labelManager = createLabelManager(config)
@@ -25,29 +26,22 @@ export default (config): Adapter => {
 
     const {wordLabels, allLabels} = getLabels(environment)
 
-    let visibleLabels = allLabels
-
-    // assign keys
-    const keyset = getKeySet(config)
-    visibleLabels = visibleLabels
-      .map(keyset.assignKeyLabel(visibleLabels.length, wordLabels.length))
-      // exclude labels with no assigned keyset
+    const visibleLabels = allLabels
+      // assign keys
+      .map(assignKeyLabel(config, allLabels, wordLabels))
       .filter(hasKeyLabel)
-
-    // render
-    const isRendered = ({element}) => !!element
-    const renderLabel = label => {label.drawLabel()}
-    visibleLabels
-      .forEach(renderLabel)
-    visibleLabels = visibleLabels
+      // render
+      .map(renderLabel)
       .filter(isRendered)
-    visibleLabels
-      .forEach(labelManager.addLabel)
+
+    visibleLabels.forEach(labelManager.addLabel)
 
     labelManager.layer.render()
 
     return {
       ...data,
+      // only keep initially visible labels (non visible ones either
+      // miss keyLabel or element)
       labels: visibleLabels,
       visibleLabels,
       hiddenLabels: [],
@@ -124,4 +118,20 @@ export default (config): Adapter => {
     },
     flashNoMatch,
   }
+}
+
+const hasKeyLabel = label => label.keyLabel
+
+const assignKeyLabel = (config, allLabels, primaryLabels) => {
+  const keyset = getKeySet(config)
+  const primaryCount = primaryLabels.length
+  const allCount = allLabels.length
+  return keyset.assignKeyLabel(allCount, primaryCount)
+}
+
+const isRendered = ({element}) => !!element
+
+const renderLabel = label => {
+  label.drawLabel()
+  return label
 }

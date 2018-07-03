@@ -47,7 +47,11 @@ describe('jumpy state machine', () => {
       'statusMatch',
       'statusNoMatch',
     ])
-    const config = parseConfig({numKeys: 2, flashNoMatch: false})
+    const config = parseConfig({
+      numKeys: 2,
+      flashNoMatch: false,
+      statusBar: true,
+    })
     stateMachine = createStateMachine({config, adapter})
     api = stateMachine.api
   })

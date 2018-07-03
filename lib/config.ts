@@ -34,7 +34,8 @@ export const parseConfig = (config): Config => ({
   wordsPattern: new RegExp(config.matchPattern, 'g'),
   useBuiltInRegexMatchAllTheThings:
     config.useBuiltInRegexMatchAllTheThings !== false,
-  htmlTargetSelectors: [ // TODO config
+  // TODO config (but let API mature a little bit first)
+  htmlTargetSelectors: [
     'a',
     'button:not([tabIndex="-1"])',
     'input:not([tabIndex="-1"])',

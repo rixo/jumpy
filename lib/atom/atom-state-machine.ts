@@ -7,37 +7,8 @@
 'use babel'
 
 import {parseConfig} from '../config'
-import {createStateMachine, Adapter} from '../state-machine'
-import KeyboardManager from './adapter-keyboard'
-import Labels from './adapter-labels'
-import Status from './adapter-status'
-import Focus from './adapter-focus'
-
-type StatusBar = any
-
-const createAdapter = ({
-  statusBar, onBlur, onKey
-}: {
-  statusBar: StatusBar, onBlur: Function, onKey: Function
-}): {adapter: Adapter, destroy()} => {
-  const focus = Focus()
-  const keyboard = KeyboardManager({onBlur, onKey})
-  const labels = Labels()
-  const {
-    adapter: status = {},
-    destroy: destroyStatus = () => {},
-  } = statusBar && Status(statusBar) || {}
-  const adapter: Adapter = {
-    ...focus,
-    ...keyboard,
-    ...labels,
-    ...status || {},
-  }
-  const destroy = () => {
-    destroyStatus()
-  }
-  return {adapter, destroy}
-}
+import {createStateMachine} from '../state-machine'
+import {createAdapter} from './atom-state-machine/adapter'
 
 // Recreates the state machine when needed, using the last config
 // and status bar service.

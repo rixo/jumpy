@@ -7,7 +7,9 @@ var Theme;
     Theme["HighContrast"] = "high-contrast";
     Theme["Vimium"] = "vimium";
 })(Theme = exports.Theme || (exports.Theme = {}));
-exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${config.fontSize * 100}%`, wordsPattern: new RegExp(config.matchPattern, 'g'), useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false, htmlTargetSelectors: [
+exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${config.fontSize * 100}%`, wordsPattern: new RegExp(config.matchPattern, 'g'), useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false, 
+    // TODO config (but let API mature a little bit first)
+    htmlTargetSelectors: [
         'a',
         'button:not([tabIndex="-1"])',
         'input:not([tabIndex="-1"])',

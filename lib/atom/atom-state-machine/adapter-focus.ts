@@ -1,6 +1,6 @@
 'use babel'
 
-import {FocusAdapter} from '../state-machine'
+import {FocusAdapter} from '../../state-machine'
 
 export default (): FocusAdapter => ({
   focus: () => {

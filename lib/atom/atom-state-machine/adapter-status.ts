@@ -1,6 +1,6 @@
 'use babel'
 
-import {StatusAdapter} from '../state-machine'
+import {StatusAdapter} from '../../state-machine'
 
 export default (statusBar) => {
 

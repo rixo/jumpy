@@ -25,7 +25,7 @@ interface Api extends GenericApi {
   cancel(): void
   back(): void
   reset(): void
-  key(key): void
+  key(key: string): void
 }
 
 type StateMachine = StatefulMachine<Data, Api>
@@ -97,12 +97,7 @@ const fsm = Machine({
       ],
       on: {
         CANCEL: 'idle',
-        RESET: {'.wait_key': {
-          actions: [
-            ...reset,
-            'updateLabels',
-          ],
-        }},
+        RESET: {'.wait_key': {actions: [...reset, 'updateLabels']}},
         KEY: {'.new_key': {actions: ['pushKey']}},
         BACK: [{
           target: '.wait_key',

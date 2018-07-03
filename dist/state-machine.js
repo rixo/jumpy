@@ -32,12 +32,7 @@ const fsm = xstate_1.Machine({
             ],
             on: {
                 CANCEL: 'idle',
-                RESET: { '.wait_key': {
-                        actions: [
-                            ...reset,
-                            'updateLabels',
-                        ],
-                    } },
+                RESET: { '.wait_key': { actions: [...reset, 'updateLabels'] } },
                 KEY: { '.new_key': { actions: ['pushKey'] } },
                 BACK: [{
                         target: '.wait_key',

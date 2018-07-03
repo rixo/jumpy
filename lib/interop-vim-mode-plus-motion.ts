@@ -25,7 +25,6 @@ interface Jumpy {
 
 type setup = (jumpy: Jumpy, service: VimService) => void
 
-// export const setup = ({getClass: () => Object}) => {
 export const setup: setup = (jumpy, vim) => {
   const {getClass, registerCommandFromSpec} = vim
   const Motion = <{new(): Motion}> getClass('Motion')

@@ -1,7 +1,6 @@
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// export const setup = ({getClass: () => Object}) => {
 exports.setup = (jumpy, vim) => {
     const { getClass, registerCommandFromSpec } = vim;
     const Motion = getClass('Motion');

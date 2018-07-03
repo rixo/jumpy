@@ -1,10 +1,7 @@
 'use babel'
 
 import {CompositeDisposable} from 'atom'
-import {
-  createStateMachine,
-  Adapter,
-} from '../state-machine'
+import {createStateMachine, Adapter} from '../state-machine'
 import {Config, parseConfig} from '../config'
 import KeyboardManager from './adapter-keyboard'
 import Labels from './adapter-labels'

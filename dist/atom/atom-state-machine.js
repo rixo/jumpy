@@ -1,3 +1,8 @@
+/**
+ * Creates a factory object that is used to keep a Jumpy state machine
+ * (becoming a Atom Jumpy state machine for the occasion) in sync with
+ * Atom's config and available services (statusBar...).
+ */
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });

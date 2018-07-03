@@ -1,3 +1,10 @@
+/**
+ * This is the implementation of the actual Atom "package object".
+ *
+ * We don't expose this directyl to Atom to allow for lazy loading
+ * of this module and all its dependencies from the actual package
+ * module.
+ */
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });

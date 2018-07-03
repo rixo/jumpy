@@ -1,3 +1,8 @@
+/**
+ * Atom Jumpy package. The actual implementation in done in atom-jumpy
+ * module, allowing for lazy loading of the brunt of this package weight
+ * on first activation.
+ */
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });

@@ -2,6 +2,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const label_matcher_1 = require("./label-matcher");
+// This is the most important default action: it is called
+// when a new key is entered (or backed from -- in essence,
+// when currently entered keys change) and automatically
+// transition to partial_match/no_match state.
+//
+// filterLabels is used under the hood for actual label key
+// matching.
+//
 const applyKeys = (data, event, { dispatch }) => {
     const nextData = label_matcher_1.filterLabels(data);
     const { visibleLabels: { length: n0 } } = data;

@@ -3,6 +3,14 @@
 import {Data} from './state-machine'
 import {filterLabels} from './label-matcher'
 
+// This is the most important default action: it is called
+// when a new key is entered (or backed from -- in essence,
+// when currently entered keys change) and automatically
+// transition to partial_match/no_match state.
+//
+// filterLabels is used under the hood for actual label key
+// matching.
+//
 const applyKeys = (data: Data, event, {dispatch}) => {
   const nextData = filterLabels(data)
   const {visibleLabels: {length: n0}} = data

@@ -2,12 +2,8 @@
 
 import * as _ from 'lodash'
 import {Point, TextEditor as TextEditorBase} from 'atom'
-import {
-  Label,
-  Labeler,
-  LabelPosition,
-} from '../../label-interface'
-import {LabelEnvironment} from '../adapter-labels/label'
+import {Label, LabelPosition} from '../adapter-labels/label'
+import {Labeler, LabelEnvironment} from '../labelers'
 import getRegex from '../../util/regex-match-all-the-things-dev-loader'
 
 interface TextEditor extends TextEditorBase {

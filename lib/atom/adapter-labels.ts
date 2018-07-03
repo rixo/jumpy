@@ -1,10 +1,9 @@
 'use babel'
 
-import {LabelEnvironment} from './adapter-labels/label'
 import {getKeySet} from '../keyset'
 import {createLabelManager, LabelManager} from './adapter-labels/label-manager'
 import {createTextEditorLocators} from './adapter-labels/editor-coords'
-import {getLabels} from './labelers'
+import {LabelEnvironment, getLabels} from './labelers'
 import {Data, LabelAdapter, FlashAdapter} from '../state-machine'
 
 interface Adapter extends LabelAdapter, FlashAdapter {}

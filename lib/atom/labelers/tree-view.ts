@@ -1,11 +1,7 @@
 'use babel'
 
-import {
-  Label,
-  Labeler,
-  LabelPosition,
-  LabelEnvironment,
-} from '../adapter-labels/label'
+import {Label, LabelPosition} from '../adapter-labels/label'
+import {Labeler, LabelEnvironment} from '../labelers'
 
 let TreeView = null
 try {

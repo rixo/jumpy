@@ -1,14 +1,6 @@
 'use babel'
 
-import {Config} from '../../config'
-import {getCoordsInEditor} from './editor-coords'
-import {LabelManager} from './label-manager'
-
-export interface LabelEnvironment {
-  settings: Config
-  getCoordsInEditor: getCoordsInEditor
-  labels: LabelManager
-}
+import {Label as AgnosticLabel} from '../../label-interface'
 
 interface CSSPosition {
   top?: string
@@ -19,21 +11,6 @@ interface CSSPosition {
 
 export type LabelPosition = {x: number, y: number} | CSSPosition
 
-export type AnimateBeaconOptions = {
-  delay?: boolean|number,
-  cssClass?: string,
-}
-
-export interface Label {
-  keyLabel: string
-  element?: HTMLElement
+export interface Label extends AgnosticLabel {
   labelPosition: LabelPosition
-  drawLabel(): void
-  animateBeacon?: AnimateBeaconOptions
-  jump(): void
-  destroy?(): void
-}
-
-export interface Labeler {
-  (environment: LabelEnvironment): Array<Label>
 }

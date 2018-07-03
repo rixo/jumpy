@@ -1,11 +1,24 @@
 'use babel'
 
-import {LabelEnvironment} from './adapter-labels/label'
+import {Config} from '../config'
+import {getCoordsInEditor} from './adapter-labels/editor-coords'
+import {LabelManager} from './adapter-labels/label-manager'
+import {Label} from './adapter-labels/label'
 import getWordLabels from './labelers/words'
 import getTabLabels from './labelers/tabs'
 import getSettingsLabels from './labelers/settings'
 import getTreeViewLabels from './labelers/tree-view'
 import getFindViewLabels from './labelers/find-view'
+
+export interface LabelEnvironment {
+  settings: Config
+  getCoordsInEditor: getCoordsInEditor
+  labels: LabelManager
+}
+
+export interface Labeler {
+  (environment: LabelEnvironment): Array<Label>
+}
 
 const concatAll = (a, b) => a.concat(b)
 

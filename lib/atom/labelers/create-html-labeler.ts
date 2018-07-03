@@ -1,11 +1,7 @@
 'use babel'
 
-import {
-  Label,
-  LabelPosition,
-  Labeler,
-  LabelEnvironment,
-} from '../adapter-labels/label'
+import {Label, LabelPosition} from '../adapter-labels/label'
+import {Labeler, LabelEnvironment} from '../labelers'
 import {} from '../adapter-labels'
 
 // wrap closure (for eye candies)

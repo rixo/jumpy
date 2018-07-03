@@ -1,12 +1,8 @@
 'use babel';
 
-import {
-  Label,
-  Labeler,
-  LabelPosition,
-  LabelEnvironment,
-} from '../adapter-labels/label'
-import { TextEditor, Pane } from 'atom'
+import {Label, LabelPosition} from '../adapter-labels/label'
+import {Labeler, LabelEnvironment} from '../labelers'
+import {TextEditor, Pane} from 'atom'
 
 let SettingsView
 try {

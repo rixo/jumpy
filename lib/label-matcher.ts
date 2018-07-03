@@ -1,3 +1,7 @@
+/**
+ * Utilities supporting smart case matching.
+ */
+
 'use babel'
 
 import {Config} from './config'

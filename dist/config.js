@@ -7,7 +7,7 @@ var Theme;
     Theme["HighContrast"] = "high-contrast";
     Theme["Vimium"] = "vimium";
 })(Theme = exports.Theme || (exports.Theme = {}));
-exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${config.fontSize * 100}%`, wordsPattern: new RegExp(config.matchPattern, 'g'), treeViewAutoSelect: true, useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false, settingsTargetSelectors: [
+exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${config.fontSize * 100}%`, wordsPattern: new RegExp(config.matchPattern, 'g'), treeViewAutoSelect: true, useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false, htmlTargetSelectors: [
         'a',
         'button:not([tabIndex="-1"])',
         'input:not([tabIndex="-1"])',
@@ -19,6 +19,7 @@ exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${conf
         '.section.packages .package-card',
         '.sub-section-heading.has-items$right',
         '.repo-link',
+        '.clickable',
     ] }, config));
 exports.default = {
     fontSize: {

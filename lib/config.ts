@@ -31,7 +31,7 @@ export const parseConfig = (config): Config => ({
   treeViewAutoSelect: true,
   useBuiltInRegexMatchAllTheThings:
     config.useBuiltInRegexMatchAllTheThings !== false,
-  settingsTargetSelectors: [ // TODO config
+  htmlTargetSelectors: [ // TODO config
     'a',
     'button:not([tabIndex="-1"])',
     'input:not([tabIndex="-1"])',
@@ -43,6 +43,7 @@ export const parseConfig = (config): Config => ({
     '.section.packages .package-card', // "Installed" section
     '.sub-section-heading.has-items$right',
     '.repo-link',
+    '.clickable',
   ],
   ...config,
 })

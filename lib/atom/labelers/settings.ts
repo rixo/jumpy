@@ -1,6 +1,11 @@
 'use babel'
 
-import { LabelEnvironment, Label, Labeler } from '../../label-interface'
+import {
+  LabelEnvironment,
+  Label,
+  LabelPosition,
+  Labeler,
+} from '../../label-interface'
 
 let SettingsView = null
 try {
@@ -16,6 +21,7 @@ interface SettingsView {}
 
 class SettingsViewLabel implements Label {
   keyLabel: string
+  labelPosition: LabelPosition
   // this.element is required for adding hot/irrelevant classes
   element: HTMLElement
   env: LabelEnvironment
@@ -28,14 +34,14 @@ class SettingsViewLabel implements Label {
   // when the parent layer is removed
   destroy() {}
 
-  drawLabel(): Label {
+  drawLabel(): void {
     const {
       keyLabel,
       targetEl,
       targetSelectorOptions: selOpts,
       env: {
         settings,
-        labels: {addLabel, createLabel},
+        labels: {createLabel},
       },
     } = this
     this.element = createLabel(keyLabel, settings)
@@ -58,8 +64,7 @@ class SettingsViewLabel implements Label {
       pos.top = rect.top + 'px'
       pos.left = rect.left + 'px'
     }
-    addLabel(this.element, pos)
-    return this
+    this.labelPosition = pos
   }
 
   jump() {
@@ -75,10 +80,6 @@ class SettingsViewLabel implements Label {
     } else {
       jump()
     }
-  }
-
-  animateBeacon() {
-    this.env.labels.animateBeacon(this.targetEl)
   }
 }
 

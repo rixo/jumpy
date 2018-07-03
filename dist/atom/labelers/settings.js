@@ -15,7 +15,7 @@ class SettingsViewLabel {
     // when the parent layer is removed
     destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, targetSelectorOptions: selOpts, env: { settings, labels: { addLabel, createLabel }, }, } = this;
+        const { keyLabel, targetEl, targetSelectorOptions: selOpts, env: { settings, labels: { createLabel }, }, } = this;
         this.element = createLabel(keyLabel, settings);
         const rect = targetEl.getBoundingClientRect();
         const pos = {};
@@ -37,8 +37,7 @@ class SettingsViewLabel {
             pos.top = rect.top + 'px';
             pos.left = rect.left + 'px';
         }
-        addLabel(this.element, pos);
-        return this;
+        this.labelPosition = pos;
     }
     jump() {
         const jump = () => {
@@ -56,9 +55,6 @@ class SettingsViewLabel {
         else {
             jump();
         }
-    }
-    animateBeacon() {
-        this.env.labels.animateBeacon(this.targetEl);
     }
 }
 const labeler = $$$(() => {

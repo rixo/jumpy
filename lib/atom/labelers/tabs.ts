@@ -1,7 +1,12 @@
 'use babel';
 
-import { LabelEnvironment, Label, Labeler } from '../../label-interface';
-import { TextEditor, Pane } from 'atom';
+import {
+  LabelEnvironment,
+  Label,
+  Labeler,
+  LabelPosition,
+} from '../../label-interface'
+import { TextEditor, Pane } from 'atom'
 
 let SettingsView
 try {
@@ -9,20 +14,29 @@ try {
 } catch (err) {
   // disable settings view support (maybe some warning?)
 }
-
 class TabLabel implements Label {
     // TODO: check I need these defined again?
     env: LabelEnvironment
-    keyLabel: string | undefined;
-    targetEl: HTMLElement;
-    paneItem: object;
-    element: HTMLElement | null;
-    settings: any;
-    selector: string;
+    keyLabel: string | undefined
+    labelPosition: LabelPosition
+    targetEl: HTMLElement
+    paneItem: object
+    element: HTMLElement | null
+    settings: any
+    selector: string
+    animateBeacon: {delay: number, cssClass: string}
+
+    constructor() {
+      this.animateBeacon = {
+        // tab switching tends to lag quite a bit and hide animation
+        delay: 60,
+        cssClass: 'tab-beacon',
+      }
+    }
 
     destroy() {}
 
-    drawLabel(): Label {
+    drawLabel() {
         const {
             keyLabel,
             targetEl,
@@ -34,18 +48,17 @@ class TabLabel implements Label {
         this.element = createLabel(keyLabel, settings)
         this.element.classList.add('tab-label')
         const rect = targetEl.getBoundingClientRect()
-        addLabel(this.element, rect.left, rect.top)
-        return this
+        this.labelPosition = {
+          x: rect.left,
+          y: rect.top,
+        }
+        addLabel(this)
     }
 
     jump() {
-        const pane = atom.workspace.paneForItem(this.paneItem);
-        pane.activate();
-        pane.activateItem(this.paneItem);
-    }
-
-    animateBeacon() {
-      this.env.labels.animateBeacon(this.element, 0)
+        const pane = atom.workspace.paneForItem(this.paneItem)
+        pane.activate()
+        pane.activateItem(this.paneItem)
     }
 }
 

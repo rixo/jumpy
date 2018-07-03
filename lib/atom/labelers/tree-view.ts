@@ -1,6 +1,11 @@
 'use babel'
 
-import {LabelEnvironment, Label, Labeler} from '../../label-interface'
+import {
+  LabelEnvironment,
+  Label,
+  Labeler,
+  LabelPosition,
+} from '../../label-interface'
 
 let TreeView = null
 try {
@@ -18,6 +23,7 @@ interface TreeView {
 
 class TreeViewLabel implements Label {
   keyLabel: string
+  labelPosition: LabelPosition
   textEditor: null
   element: HTMLElement
   env: LabelEnvironment
@@ -29,23 +35,21 @@ class TreeViewLabel implements Label {
   // when the parent layer is removed
   destroy() {}
 
-  drawLabel(): Label {
+  drawLabel() {
     const {
       keyLabel,
       targetEl,
       env: {
         settings,
-        labels: {addLabel, createLabel},
+        labels: {createLabel},
       },
     } = this
     this.element = createLabel(keyLabel, settings)
     const rect = targetEl.getBoundingClientRect()
-    addLabel(this.element, rect.left, rect.top)
-    return this
-  }
-
-  animateBeacon() {
-    this.env.labels.animateBeacon(this.targetEl)
+    this.labelPosition = {
+      x: rect.left,
+      y: rect.top,
+    }
   }
 
   jump() {

@@ -1,8 +1,13 @@
-'use babel';
+'use babel'
 
-import * as _ from 'lodash';
-import { LabelEnvironment, Label, Labeler } from '../../label-interface';
-import { Point, Range, TextEditor as TextEditorBase } from 'atom';
+import * as _ from 'lodash'
+import {Point, TextEditor as TextEditorBase} from 'atom'
+import {
+  Label,
+  Labeler,
+  LabelPosition,
+} from '../../label-interface'
+import {LabelEnvironment} from '../adapter-labels'
 import getRegex from '../../util/regex-match-all-the-things-dev-loader'
 
 interface TextEditor extends TextEditorBase {
@@ -22,8 +27,8 @@ function getVisibleColumnRange (editorView: any): Array<number> {
 
     return [
         minColumn,
-        maxColumn
-    ];
+        maxColumn,
+    ]
 }
 
 // Taken from jQuery: https://github.com/jquery/jquery/blob/master/src/css/hiddenVisibleSelectors.js
@@ -131,6 +136,7 @@ const selectLineWise = (editor: TextEditor, destination: Point) => {
 class WordLabel implements Label {
     // TODO: check I need these defined again?
     keyLabel: string | undefined;
+    labelPosition: LabelPosition;
     textEditor: TextEditor | null;
     element: HTMLElement | null;
     env: LabelEnvironment;
@@ -142,7 +148,7 @@ class WordLabel implements Label {
 
     destroy() {}
 
-    drawLabel(): Label {
+    drawLabel() {
       const {
         textEditor,
         lineNumber,
@@ -150,31 +156,20 @@ class WordLabel implements Label {
         keyLabel,
         env: {
           settings,
-          labels: {createLabel, addEditorLabel},
+          labels: {createLabel},
+          getCoordsInEditor,
         }
       } = this;
+      // position
+      this.labelPosition = getCoordsInEditor(textEditor, lineNumber, column)
+      if (this.labelPosition === null) {
+        this.element = null
+        return
+      }
+      // element
       const labelElement = createLabel(keyLabel, settings)
       labelElement.classList.add('jumpy-label-editor') // For styling and tests
-      addEditorLabel(textEditor, labelElement, lineNumber, column)
       this.element = labelElement;
-      return this;
-    }
-
-    animateBeacon() {
-        const position = new Point(this.lineNumber, this.column);
-        const range = new Range(position, position);
-        const marker = this.textEditor.markScreenRange(range, { invalidate: 'never' });
-        const beacon = document.createElement('span');
-        beacon.classList.add('jumpy-beacon'); // For styling and tests
-        beacon.classList.add('jumpy-beacon-editor'); // For styling and tests
-        const tx = this.textEditor.defaultCharWidth / 2;
-        const ty = -this.textEditor.getLineHeightInPixels() / 2;
-        beacon.style.transform = `translate(${tx}px, ${ty}px)`;
-        this.textEditor.decorateMarker(marker, {
-            item: beacon,
-            type: 'overlay'
-        });
-        setTimeout(() => marker.destroy(), 150);
     }
 
     jump() {

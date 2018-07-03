@@ -3,47 +3,42 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const keyset_1 = require("../keyset");
 const label_manager_1 = require("./label-manager");
-const words_1 = require("./labelers/words");
-const tabs_1 = require("./labelers/tabs");
-const settings_1 = require("./labelers/settings");
-const tree_view_1 = require("./labelers/tree-view");
+const editor_coords_1 = require("./editor-coords");
+const labelers_1 = require("./labelers");
 exports.default = (config) => {
     const hasKeyLabel = label => label.keyLabel;
-    const concatAll = (a, b) => a.concat(b);
     let labelManager = null;
     const createLabels = (data) => {
-        labelManager = label_manager_1.default(config);
+        const getCoordsInEditor = editor_coords_1.createTextEditorLocators();
+        labelManager = label_manager_1.createLabelManager(config);
         const environment = {
             settings: config,
             labels: labelManager,
+            getCoordsInEditor,
         };
-        const wordLabels = words_1.default(environment);
-        const otherLabellers = [
-            settings_1.default,
-            tree_view_1.default,
-            tabs_1.default,
-        ];
-        const otherLabels = otherLabellers
-            .map(getLabels => getLabels(environment))
-            .reduce(concatAll, []);
-        let allLabels = [...wordLabels, ...otherLabels];
+        const { wordLabels, allLabels } = labelers_1.getLabels(environment);
+        let visibleLabels = allLabels;
         // assign keys
-        const keys = keyset_1.getKeySet(config);
-        allLabels = allLabels
-            .map(keys.assignKeyLabel(allLabels.length, wordLabels.length))
-            // exclude labels with no assigned keys
+        const keyset = keyset_1.getKeySet(config);
+        visibleLabels = visibleLabels
+            .map(keyset.assignKeyLabel(visibleLabels.length, wordLabels.length))
+            // exclude labels with no assigned keyset
             .filter(hasKeyLabel);
         // render
-        const isTruthy = x => !!x;
-        allLabels = allLabels
-            .map(label => label.drawLabel())
-            .filter(isTruthy);
-        labelManager.render();
-        return Object.assign({}, data, { labels: allLabels, visibleLabels: allLabels, hiddenLabels: [] });
+        const isRendered = ({ element }) => !!element;
+        const renderLabel = label => { label.drawLabel(); };
+        visibleLabels
+            .forEach(renderLabel);
+        visibleLabels = visibleLabels
+            .filter(isRendered);
+        visibleLabels
+            .forEach(labelManager.addLabel);
+        labelManager.layer.render();
+        return Object.assign({}, data, { labels: visibleLabels, visibleLabels, hiddenLabels: [] });
     };
     const destroyLabels = (data) => {
         if (labelManager) {
-            labelManager.destroy();
+            labelManager.layer.destroy();
             labelManager = null;
         }
         // TODO remove: unneeded
@@ -82,7 +77,7 @@ exports.default = (config) => {
         if (!labelManager) {
             return;
         }
-        const { element } = labelManager;
+        const { element } = labelManager.layer;
         const flash = document.createElement('div');
         flash.classList.add('jumpy-no-match-flash');
         element.appendChild(flash);
@@ -95,10 +90,20 @@ exports.default = (config) => {
         jump: (data, { label }) => {
             const { config: { useHomingBeaconEffectOnJumps } } = data;
             if (useHomingBeaconEffectOnJumps) {
-                label.animateBeacon();
+                // TODO env is not public in Label
+                label.env.labels.animateBeacon(label);
             }
             label.jump();
         },
+        // // TODO animateBeacon FSM transition
+        // animateBeacon: (data: Data, {label}) => {
+        //   if (label.animateBeacon) {
+        //     label.animateBeacon()
+        //   } else {
+        //     // TODO env is not public in Label
+        //     label.env.labels.animateBeacon(label)
+        //   }
+        // },
         flashNoMatch,
     };
 };

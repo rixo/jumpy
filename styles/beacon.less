@@ -8,13 +8,13 @@
     border-radius: 1px;
     width: 2px;
     height: 2px;
-    tranform: translate(-1px, -1px);
+    transform: translate(50%, 50%);
     z-index: 4;
     -webkit-animation: ripple .085s;
     &.tab-beacon {
-        // TODO: Really work needs to be done to trigger *after* tab switch
-        left: 18px;
-        top: -15px;
+      // TODO shouldn't be theme dependent...
+      margin-top: 12px;
+      margin-left: 6px;
     }
 }
 @-webkit-keyframes ripple {

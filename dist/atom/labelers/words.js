@@ -12,7 +12,7 @@ function getVisibleColumnRange(editorView) {
     const maxColumn = editorView.getScrollRight() / charWidth;
     return [
         minColumn,
-        maxColumn
+        maxColumn,
     ];
 }
 // Taken from jQuery: https://github.com/jquery/jquery/blob/master/src/css/hiddenVisibleSelectors.js
@@ -117,28 +117,17 @@ const selectLineWise = (editor, destination) => {
 class WordLabel {
     destroy() { }
     drawLabel() {
-        const { textEditor, lineNumber, column, keyLabel, env: { settings, labels: { createLabel, addEditorLabel }, } } = this;
+        const { textEditor, lineNumber, column, keyLabel, env: { settings, labels: { createLabel }, getCoordsInEditor, } } = this;
+        // position
+        this.labelPosition = getCoordsInEditor(textEditor, lineNumber, column);
+        if (this.labelPosition === null) {
+            this.element = null;
+            return;
+        }
+        // element
         const labelElement = createLabel(keyLabel, settings);
         labelElement.classList.add('jumpy-label-editor'); // For styling and tests
-        addEditorLabel(textEditor, labelElement, lineNumber, column);
         this.element = labelElement;
-        return this;
-    }
-    animateBeacon() {
-        const position = new atom_1.Point(this.lineNumber, this.column);
-        const range = new atom_1.Range(position, position);
-        const marker = this.textEditor.markScreenRange(range, { invalidate: 'never' });
-        const beacon = document.createElement('span');
-        beacon.classList.add('jumpy-beacon'); // For styling and tests
-        beacon.classList.add('jumpy-beacon-editor'); // For styling and tests
-        const tx = this.textEditor.defaultCharWidth / 2;
-        const ty = -this.textEditor.getLineHeightInPixels() / 2;
-        beacon.style.transform = `translate(${tx}px, ${ty}px)`;
-        this.textEditor.decorateMarker(marker, {
-            item: beacon,
-            type: 'overlay'
-        });
-        setTimeout(() => marker.destroy(), 150);
     }
     jump() {
         const currentEditor = this.textEditor;

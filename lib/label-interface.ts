@@ -8,15 +8,31 @@ export interface LabelEnvironment {
   labels: LabelManager
 }
 
+interface CSSPosition {
+  top?: string
+  bottom?: string
+  left?: string
+  right?: string
+}
+
+export type LabelPosition = {x: number, y: number} | CSSPosition
+
+export type AnimateBeaconOptions = {
+  delay?: boolean|number,
+  cssClass?: string,
+}
+
 export interface Label {
   keyLabel: string
   element?: HTMLElement
-  drawLabel(): Label
-  animateBeacon(): void
+  labelPosition: LabelPosition
+  drawLabel(): void
+  animateBeacon?: AnimateBeaconOptions
+  beaconClass?: string
   jump(): void
   destroy(): void
 }
 
 export interface Labeler {
-  (environment:LabelEnvironment):Array<Label>
+  (environment: LabelEnvironment): Array<Label>
 }

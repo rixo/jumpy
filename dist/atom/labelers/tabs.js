@@ -10,22 +10,29 @@ catch (err) {
     // disable settings view support (maybe some warning?)
 }
 class TabLabel {
+    constructor() {
+        this.animateBeacon = {
+            // tab switching tends to lag quite a bit and hide animation
+            delay: 60,
+            cssClass: 'tab-beacon',
+        };
+    }
     destroy() { }
     drawLabel() {
         const { keyLabel, targetEl, env: { settings, labels: { createLabel, addLabel }, }, } = this;
         this.element = createLabel(keyLabel, settings);
         this.element.classList.add('tab-label');
         const rect = targetEl.getBoundingClientRect();
-        addLabel(this.element, rect.left, rect.top);
-        return this;
+        this.labelPosition = {
+            x: rect.left,
+            y: rect.top,
+        };
+        addLabel(this);
     }
     jump() {
         const pane = atom.workspace.paneForItem(this.paneItem);
         pane.activate();
         pane.activateItem(this.paneItem);
-    }
-    animateBeacon() {
-        this.env.labels.animateBeacon(this.element, 0);
     }
 }
 const getPaneItemSelector = paneItem => {

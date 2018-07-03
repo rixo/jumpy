@@ -1,15 +1,29 @@
 'use babel'
 
-export default (
-  target: HTMLElement,
-  delay: boolean|number = false,
-): void => {
+import {Label} from '../../label-interface'
+import parseCssPosition from './parse-css-position'
+
+export type animateBeaconType = (label: Label) => void
+
+const animateBeacon: animateBeaconType = (label: Label) => {
+  let options
+  if (label.animateBeacon) {
+    if (typeof label.animateBeacon === 'function') {
+      const handler = <Function> label.animateBeacon
+      handler.call(label)
+    } {
+      options = label.animateBeacon
+    }
+  }
+  const {delay, cssClass} = options || <any> {}
+
   const beacon = document.createElement('div')
   const {style, classList} = beacon
   classList.add('jumpy-beacon')
-  const {top, left, width, height} = target.getBoundingClientRect()
-  style.left = left + width / 2 + 'px'
-  style.top = top + height / 2 + 'px'
+  Object.assign(style, parseCssPosition(label.labelPosition))
+  if (cssClass) {
+    classList.add(cssClass)
+  }
   const display = () => {
     document.body.appendChild(beacon)
     setTimeout(() => beacon.remove(), 150)
@@ -20,3 +34,5 @@ export default (
     setTimeout(display, delay)
   }
 }
+
+export default animateBeacon

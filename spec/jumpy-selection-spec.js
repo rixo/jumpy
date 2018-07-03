@@ -121,6 +121,7 @@ describe('jumpy visual mode selection', () => {
     await atom.workspace.open()
     editor = atom.workspace.getActiveTextEditor()
     editor.setText(code)
+    await new Promise(resolve => requestAnimationFrame(resolve))
   })
 
   //////////////////////////////////////////////////////////////////////////////

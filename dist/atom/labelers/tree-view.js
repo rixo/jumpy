@@ -15,14 +15,13 @@ class TreeViewLabel {
     // when the parent layer is removed
     destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, env: { settings, labels: { addLabel, createLabel }, }, } = this;
+        const { keyLabel, targetEl, env: { settings, labels: { createLabel }, }, } = this;
         this.element = createLabel(keyLabel, settings);
         const rect = targetEl.getBoundingClientRect();
-        addLabel(this.element, rect.left, rect.top);
-        return this;
-    }
-    animateBeacon() {
-        this.env.labels.animateBeacon(this.targetEl);
+        this.labelPosition = {
+            x: rect.left,
+            y: rect.top,
+        };
     }
     jump() {
         const { treeView, treeViewEntry: entry, env: { settings: { treeViewAutoSelect }, } } = this;

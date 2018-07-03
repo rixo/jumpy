@@ -103,5 +103,10 @@ exports.default = {
         type: 'boolean',
         default: false,
     },
+    statusBar: {
+        description: "Show Jumpy status in status bar.",
+        type: 'boolean',
+        default: true,
+    }
 };
 //# sourceMappingURL=config.js.map

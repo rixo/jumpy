@@ -23,6 +23,7 @@ export interface Config {
   customKeysLeft: string[]
   customKeysRight: string[]
   flashNoMatch: boolean
+  statusBar: boolean
 }
 
 export const parseConfig = (config): Config => ({
@@ -131,4 +132,9 @@ export default {
     type: 'boolean',
     default: false,
   },
+  statusBar: {
+    description: "Show Jumpy status in status bar.",
+    type: 'boolean',
+    default: true,
+  }
 }

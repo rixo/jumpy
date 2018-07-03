@@ -39,6 +39,18 @@ const statusActions = {
   statusNoMatch: () => {},
 }
 
+const ifConfigStatus = ({}, handler) => (data: Data, event) => {
+  const {config: {statusBar}} = data
+  if (statusBar) {
+    return handler(data, event)
+  }
+}
+const statusWrappers = Object.keys(statusActions)
+  .reduce((wrappers, action) => {
+    wrappers[action] = ifConfigStatus
+    return wrappers
+  }, {})
+
 const callbackActions = {
   setCallbacks: (data, {onJump, onCancel}) => ({
     ...data,
@@ -84,6 +96,7 @@ export const defaultActions = {
 }
 
 export const actionWrappers = {
+  ...statusWrappers,
   jump: ({}, handler) => (data, event) => {
     const {onJump} = data.callbacks
     if (onJump) {
@@ -93,5 +106,5 @@ export const actionWrappers = {
       }
     }
     return handler(data, event)
-  }
+  },
 }

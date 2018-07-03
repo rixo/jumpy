@@ -30,6 +30,17 @@ const statusActions = {
     statusMatch: () => { },
     statusNoMatch: () => { },
 };
+const ifConfigStatus = ({}, handler) => (data, event) => {
+    const { config: { statusBar } } = data;
+    if (statusBar) {
+        return handler(data, event);
+    }
+};
+const statusWrappers = Object.keys(statusActions)
+    .reduce((wrappers, action) => {
+    wrappers[action] = ifConfigStatus;
+    return wrappers;
+}, {});
 const callbackActions = {
     setCallbacks: (data, { onJump, onCancel }) => (Object.assign({}, data, { callbacks: { onJump, onCancel } })),
     clearCallbacks: (data) => (Object.assign({}, data, { callbacks: {} })),
@@ -56,8 +67,7 @@ exports.defaultActions = Object.assign({}, statusActions, callbackActions, keyAc
             }
         }
     } });
-exports.actionWrappers = {
-    jump: ({}, handler) => (data, event) => {
+exports.actionWrappers = Object.assign({}, statusWrappers, { jump: ({}, handler) => (data, event) => {
         const { onJump } = data.callbacks;
         if (onJump) {
             const abort = onJump(event) === false;
@@ -66,6 +76,5 @@ exports.actionWrappers = {
             }
         }
         return handler(data, event);
-    }
-};
+    } });
 //# sourceMappingURL=state-machine-actions.js.map

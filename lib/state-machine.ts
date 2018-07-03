@@ -37,6 +37,7 @@ export interface LabelAdapter {
   destroyLabels: ActionHandler
   updateLabels: ActionHandler // update labels elements (css classes)
   jump: ActionHandler
+  animateBeacon: ActionHandler
 }
 
 export interface FlashAdapter {
@@ -115,7 +116,7 @@ const fsm = Machine({
         }],
         NO_MATCH: '.no_match',
         MATCH: '.partial_match',
-        JUMP: {idle: {actions: ['jump']}},
+        JUMP: {idle: {actions: ['maybeAnimateBeacon', 'jump']}},
       },
       initial: 'wait_key',
       states: {

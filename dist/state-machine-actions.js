@@ -47,6 +47,14 @@ exports.defaultActions = Object.assign({}, statusActions, callbackActions, keyAc
                 return handler(data, event, utils);
             }
         }
+    }, maybeAnimateBeacon: (data, event, utils) => {
+        const { getHandler } = utils;
+        if (data.config.useHomingBeaconEffectOnJumps) {
+            const handler = getHandler('animateBeacon');
+            if (handler) {
+                return handler(data, event, utils);
+            }
+        }
     } });
 exports.actionWrappers = {
     jump: ({}, handler) => (data, event) => {

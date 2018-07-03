@@ -52,7 +52,7 @@ const fsm = xstate_1.Machine({
                     }],
                 NO_MATCH: '.no_match',
                 MATCH: '.partial_match',
-                JUMP: { idle: { actions: ['jump'] } },
+                JUMP: { idle: { actions: ['maybeAnimateBeacon', 'jump'] } },
             },
             initial: 'wait_key',
             states: {

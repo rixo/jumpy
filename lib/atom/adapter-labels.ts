@@ -117,23 +117,13 @@ export default (config): Adapter => {
     createLabels,
     destroyLabels,
     updateLabels,
-    jump: (data: Data, {label}) => {
-      const {config: {useHomingBeaconEffectOnJumps}} = data
-      if (useHomingBeaconEffectOnJumps) {
-        // TODO env is not public in Label
-        label.env.labels.animateBeacon(label)
-      }
+    jump: ({}, {label}) => {
       label.jump()
     },
-    // // TODO animateBeacon FSM transition
-    // animateBeacon: (data: Data, {label}) => {
-    //   if (label.animateBeacon) {
-    //     label.animateBeacon()
-    //   } else {
-    //     // TODO env is not public in Label
-    //     label.env.labels.animateBeacon(label)
-    //   }
-    // },
+    animateBeacon: ({}, {label}) => {
+      // TODO env is not public in Label
+      label.env.labels.animateBeacon(label)
+    },
     flashNoMatch,
   }
 }

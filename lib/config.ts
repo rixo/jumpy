@@ -16,6 +16,7 @@ export interface Config {
   hideMatchedChars: boolean
   // matchPattern: string
   wordsPattern: RegExp
+  treeViewAutoSelect: boolean
   preferAlternateHands: boolean
   smartCaseMatch: boolean
   customKeys: string[]

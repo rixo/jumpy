@@ -1,11 +1,11 @@
 'use babel';
 
 import {
-  LabelEnvironment,
   Label,
   Labeler,
   LabelPosition,
-} from '../../label-interface'
+  LabelEnvironment,
+} from '../adapter-labels/label'
 import { TextEditor, Pane } from 'atom'
 
 let SettingsView
@@ -34,18 +34,15 @@ class TabLabel implements Label {
       }
     }
 
-    destroy() {}
-
     drawLabel() {
         const {
             keyLabel,
             targetEl,
             env: {
-                settings,
                 labels: {createLabel, addLabel},
             },
         } = this
-        this.element = createLabel(keyLabel, settings)
+        this.element = createLabel(keyLabel)
         this.element.classList.add('tab-label')
         const rect = targetEl.getBoundingClientRect()
         this.labelPosition = {

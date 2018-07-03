@@ -1,6 +1,6 @@
 'use babel'
 
-import {LabelPosition} from '../../label-interface'
+import {LabelPosition} from '../label'
 
 const px = num => `${num}px`
 

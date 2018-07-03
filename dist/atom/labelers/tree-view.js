@@ -11,12 +11,9 @@ catch (err) {
 // wrap closure (for eye candies)
 const $$$ = fn => fn();
 class TreeViewLabel {
-    // no need to cleanup: our elements will be cleaned out
-    // when the parent layer is removed
-    destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, env: { settings, labels: { createLabel }, }, } = this;
-        this.element = createLabel(keyLabel, settings);
+        const { keyLabel, targetEl, env: { labels: { createLabel }, }, } = this;
+        this.element = createLabel(keyLabel);
         const rect = targetEl.getBoundingClientRect();
         this.labelPosition = {
             x: rect.left,

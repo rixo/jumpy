@@ -1,9 +1,13 @@
 'use babel'
 
-import {Config} from './config'
+import {Config} from '../../config'
+import {getCoordsInEditor} from './editor-coords'
+import {LabelManager} from './label-manager'
 
 export interface LabelEnvironment {
   settings: Config
+  getCoordsInEditor: getCoordsInEditor
+  labels: LabelManager
 }
 
 interface CSSPosition {

@@ -8,7 +8,7 @@ exports.createLabelManager = (settings) => {
     const layer = label_layer_1.createLabelLayer(settings);
     return {
         get layer() { return layer; },
-        createLabel: create_label_1.default,
+        createLabel: (keyLabel) => create_label_1.default(keyLabel, settings),
         animateBeacon: animate_beacon_1.default,
         addLabel: layer.addLabel,
     };

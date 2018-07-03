@@ -1,6 +1,6 @@
 'use babel'
 
-import {Label} from '../../label-interface'
+import {Label} from '../label'
 import parseCssPosition from './parse-css-position'
 
 export type animateBeaconType = (label: Label) => void

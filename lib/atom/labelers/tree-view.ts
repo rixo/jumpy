@@ -1,11 +1,11 @@
 'use babel'
 
 import {
-  LabelEnvironment,
   Label,
   Labeler,
   LabelPosition,
-} from '../../label-interface'
+  LabelEnvironment,
+} from '../adapter-labels/label'
 
 let TreeView = null
 try {
@@ -31,20 +31,15 @@ class TreeViewLabel implements Label {
   treeView: any // TreeView
   treeViewEntry: any
 
-  // no need to cleanup: our elements will be cleaned out
-  // when the parent layer is removed
-  destroy() {}
-
   drawLabel() {
     const {
       keyLabel,
       targetEl,
       env: {
-        settings,
         labels: {createLabel},
       },
     } = this
-    this.element = createLabel(keyLabel, settings)
+    this.element = createLabel(keyLabel)
     const rect = targetEl.getBoundingClientRect()
     this.labelPosition = {
       x: rect.left,

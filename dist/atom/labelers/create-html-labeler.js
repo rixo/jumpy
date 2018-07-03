@@ -5,12 +5,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const $$$ = fn => fn();
 const getRight = rect => (document.body.getBoundingClientRect().right - rect.right) + 'px';
 class HtmlViewLabel {
-    // no need to cleanup: our elements will be cleaned out
-    // when the parent layer is removed
-    destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, targetSelectorOptions: selOpts, env: { settings, labels: { createLabel }, }, } = this;
-        this.element = createLabel(keyLabel, settings);
+        const { keyLabel, targetEl, targetSelectorOptions: selOpts, env: { labels: { createLabel }, }, } = this;
+        this.element = createLabel(keyLabel);
         const rect = targetEl.getBoundingClientRect();
         const pos = {};
         if (selOpts) {

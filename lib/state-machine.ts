@@ -2,7 +2,7 @@
 
 import {Machine} from 'xstate'
 import {
-  StateMachine as GenericStateMachine,
+  StateMachine as StatefulMachine,
   Api as GenericApi,
   Event,
   createStatefulMachine,
@@ -28,7 +28,7 @@ interface Api extends GenericApi {
   key(key): void
 }
 
-type StateMachine = GenericStateMachine<Data, Api>
+type StateMachine = StatefulMachine<Data, Api>
 
 type ActionHandler = (data: Data, event: Event) => Data | void
 

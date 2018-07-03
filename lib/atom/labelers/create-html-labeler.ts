@@ -1,11 +1,12 @@
 'use babel'
 
 import {
-  LabelEnvironment,
   Label,
   LabelPosition,
   Labeler,
-} from '../../label-interface'
+  LabelEnvironment,
+} from '../adapter-labels/label'
+import {} from '../adapter-labels'
 
 // wrap closure (for eye candies)
 const $$$ = fn => fn()
@@ -24,21 +25,16 @@ class HtmlViewLabel implements Label {
   targetSelectorOptions: string
   settingsView: any
 
-  // no need to cleanup: our elements will be cleaned out
-  // when the parent layer is removed
-  destroy() {}
-
   drawLabel(): void {
     const {
       keyLabel,
       targetEl,
       targetSelectorOptions: selOpts,
       env: {
-        settings,
         labels: {createLabel},
       },
     } = this
-    this.element = createLabel(keyLabel, settings)
+    this.element = createLabel(keyLabel)
     const rect = targetEl.getBoundingClientRect()
     const pos: {top?, left?, bottom?, right?} = {}
     if (selOpts) {

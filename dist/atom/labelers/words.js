@@ -115,9 +115,8 @@ const selectLineWise = (editor, destination) => {
     }
 };
 class WordLabel {
-    destroy() { }
     drawLabel() {
-        const { textEditor, lineNumber, column, keyLabel, env: { settings, labels: { createLabel }, getCoordsInEditor, } } = this;
+        const { textEditor, lineNumber, column, keyLabel, env: { labels: { createLabel }, getCoordsInEditor, } } = this;
         // position
         this.labelPosition = getCoordsInEditor(textEditor, lineNumber, column);
         if (this.labelPosition === null) {
@@ -125,7 +124,7 @@ class WordLabel {
             return;
         }
         // element
-        const labelElement = createLabel(keyLabel, settings);
+        const labelElement = createLabel(keyLabel);
         labelElement.classList.add('jumpy-label-editor'); // For styling and tests
         this.element = labelElement;
     }
@@ -169,7 +168,7 @@ class WordLabel {
         }
     }
 }
-const labeler = function (env) {
+const labeler = (env) => {
     const labels = [];
     const { regex, adjustPosition } = regex_match_all_the_things_dev_loader_1.default(env.settings);
     // reset the RegExp for subsequent calls.

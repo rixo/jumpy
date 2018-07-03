@@ -1,6 +1,6 @@
 'use babel'
 
-import {LabelEnvironment} from '../label-interface'
+import {LabelEnvironment} from './adapter-labels/label'
 import getWordLabels from './labelers/words'
 import getTabLabels from './labelers/tabs'
 import getSettingsLabels from './labelers/settings'

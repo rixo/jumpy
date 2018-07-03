@@ -1,17 +1,13 @@
 'use babel'
 
-import {LabelEnvironment as GlobalLabelEnvironment} from '../label-interface'
+import {LabelEnvironment} from './adapter-labels/label'
 import {getKeySet} from '../keyset'
-import {createLabelManager, LabelManager} from './label-manager'
-import {createTextEditorLocators, getCoordsInEditor} from './editor-coords'
+import {createLabelManager, LabelManager} from './adapter-labels/label-manager'
+import {createTextEditorLocators} from './adapter-labels/editor-coords'
 import {getLabels} from './labelers'
 import {Data, LabelAdapter, FlashAdapter} from '../state-machine'
 
 interface Adapter extends LabelAdapter, FlashAdapter {}
-
-export interface LabelEnvironment extends GlobalLabelEnvironment {
-  getCoordsInEditor: getCoordsInEditor
-}
 
 export default (config): Adapter => {
   const hasKeyLabel = label => label.keyLabel
@@ -64,9 +60,11 @@ export default (config): Adapter => {
       labelManager.layer.destroy()
       labelManager = null
     }
-    // TODO remove: unneeded
+    // special destroy
     for (const label of data.labels) {
-      label.destroy()
+      if (label.destroy) {
+        label.destroy()
+      }
     }
     const empty = []
     return {

@@ -7,7 +7,7 @@ import {
   Labeler,
   LabelPosition,
 } from '../../label-interface'
-import {LabelEnvironment} from '../adapter-labels'
+import {LabelEnvironment} from '../adapter-labels/label'
 import getRegex from '../../util/regex-match-all-the-things-dev-loader'
 
 interface TextEditor extends TextEditorBase {
@@ -146,8 +146,6 @@ class WordLabel implements Label {
     column: number;
     marker: any;
 
-    destroy() {}
-
     drawLabel() {
       const {
         textEditor,
@@ -155,7 +153,6 @@ class WordLabel implements Label {
         column,
         keyLabel,
         env: {
-          settings,
           labels: {createLabel},
           getCoordsInEditor,
         }
@@ -167,7 +164,7 @@ class WordLabel implements Label {
         return
       }
       // element
-      const labelElement = createLabel(keyLabel, settings)
+      const labelElement = createLabel(keyLabel)
       labelElement.classList.add('jumpy-label-editor') // For styling and tests
       this.element = labelElement;
     }
@@ -213,7 +210,7 @@ class WordLabel implements Label {
     }
 }
 
-const labeler: Labeler = function(env:LabelEnvironment):Array<WordLabel> {
+const labeler: Labeler =(env:LabelEnvironment): WordLabel[] => {
     const labels:Array<WordLabel> = [];
     const {regex, adjustPosition} = getRegex(env.settings);
     // reset the RegExp for subsequent calls.

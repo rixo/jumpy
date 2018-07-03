@@ -2,8 +2,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const keyset_1 = require("../keyset");
-const label_manager_1 = require("./label-manager");
-const editor_coords_1 = require("./editor-coords");
+const label_manager_1 = require("./adapter-labels/label-manager");
+const editor_coords_1 = require("./adapter-labels/editor-coords");
 const labelers_1 = require("./labelers");
 exports.default = (config) => {
     const hasKeyLabel = label => label.keyLabel;
@@ -41,9 +41,11 @@ exports.default = (config) => {
             labelManager.layer.destroy();
             labelManager = null;
         }
-        // TODO remove: unneeded
+        // special destroy
         for (const label of data.labels) {
-            label.destroy();
+            if (label.destroy) {
+                label.destroy();
+            }
         }
         const empty = [];
         return Object.assign({}, data, { labels: empty, visibleLabels: empty, hiddenLabels: empty });

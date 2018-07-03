@@ -1,7 +1,7 @@
 'use babel'
 
-import {Config} from '../../config'
-import {Label} from '../../label-interface'
+import {Config} from '../../../config'
+import {Label} from '../label'
 import parseCssPosition from './parse-css-position'
 
 type addLabel = (

@@ -17,10 +17,9 @@ class TabLabel {
             cssClass: 'tab-beacon',
         };
     }
-    destroy() { }
     drawLabel() {
-        const { keyLabel, targetEl, env: { settings, labels: { createLabel, addLabel }, }, } = this;
-        this.element = createLabel(keyLabel, settings);
+        const { keyLabel, targetEl, env: { labels: { createLabel, addLabel }, }, } = this;
+        this.element = createLabel(keyLabel);
         this.element.classList.add('tab-label');
         const rect = targetEl.getBoundingClientRect();
         this.labelPosition = {

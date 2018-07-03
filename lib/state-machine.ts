@@ -26,7 +26,13 @@ interface Api extends GenericApi {
   cancel(): void
   back(): void
   reset(): void
-  key(key: string): void
+  key(key: string | {
+    key: string
+    ctrlKey?: boolean
+    altKey?: boolean
+    shiftKey?: boolean
+    metaKey?: boolean
+  }): void
 }
 
 type StateMachine = StatefulMachine<Data, Api>
@@ -140,7 +146,7 @@ const fsm = Machine({
   },
 })
 
-const ApiSpec = ({dispatch}) => ({
+const ApiFactory = ({dispatch}) => ({
   setConfig: (config: Config) => {
     dispatch({type: 'SET_CONFIG', config})
   },
@@ -151,7 +157,10 @@ const ApiSpec = ({dispatch}) => ({
   reset: 'RESET',
   cancel: 'CANCEL',
   key: key => {
-    dispatch({type: 'KEY', key})
+    if (typeof key === 'string') {
+      key = {key, ctrlKey: false, altKey: false, shiftKey: false}
+    }
+    dispatch({type: 'KEY', ...key})
   },
 })
 
@@ -176,6 +185,6 @@ export const createStateMachine: (params: Params) => StateMachine =
     defaultActions,
     actionWrappers,
     adapter,
-    ApiSpec,
+    ApiFactory,
     data: Data(config),
   })

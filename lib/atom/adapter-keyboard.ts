@@ -30,14 +30,14 @@ export default ({onBlur, onKey}): Keyboard => {
     // only test with `key`, not `code` because code may be
     // misleading on some international keyboard layouts for
     // example, 'm' key on FR azerty reports as code 'Semicolon')
-    const {key, metaKey, ctrlKey, altKey} = event
-    if (metaKey || ctrlKey || altKey) {
-      return
-    }
+    const {key, metaKey, ctrlKey, altKey, shiftKey} = event
+    // if (metaKey || ctrlKey || altKey) {
+    //   return
+    // }
     if (/^[A-Za-z]{1}$/.test(key)) {
       event.preventDefault()
       event.stopPropagation()
-      onKey(key)
+      onKey({key, ctrlKey, altKey, shiftKey, metaKey})
     }
   }
 

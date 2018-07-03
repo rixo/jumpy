@@ -43,23 +43,43 @@ class TreeViewLabel implements Label {
     }
   }
 
-  jump() {
+  jump({ctrlKey = false} = {}) {
     const {
       treeView,
       treeViewEntry: entry,
       env: {
-        settings: {treeViewAutoSelect},
+        settings,
+        settings: {treeViewKeepFocus},
       }
     } = this
     if (!entry) {
       throw new Error('Invalid label: missing "entry" property')
     }
     treeView.selectEntry(entry)
-    if (treeViewAutoSelect) {
-      treeView.openSelectedEntry()
+    const autoSelect = parseAutoSelect(settings, ctrlKey)
+    if (autoSelect) {
+      const promise = treeView.openSelectedEntry()
+      if (treeViewKeepFocus) {
+        if (promise && promise.then) {
+          promise.then(() => {
+            treeView.focus()
+          })
+        } else {
+          treeView.focus()
+        }
+      }
     } else {
       treeView.focus()
     }
+  }
+}
+
+const parseAutoSelect = (settings, ctrlKey) => {
+  const {treeViewAutoSelect, treeViewCtrlKey} = settings
+  if (ctrlKey && treeViewCtrlKey) {
+    return !treeViewAutoSelect
+  } else {
+    return treeViewAutoSelect
   }
 }
 

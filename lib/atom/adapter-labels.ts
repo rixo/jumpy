@@ -108,8 +108,8 @@ export default (): Adapter => {
     createLabels,
     destroyLabels,
     updateLabels,
-    jump: ({}, {label}) => {
-      label.jump()
+    jump: ({}, {label, ...event}) => {
+      label.jump(event)
     },
     animateBeacon: ({}, {label}) => {
       if (labelManager) {

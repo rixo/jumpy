@@ -10,6 +10,6 @@ export interface Label {
   element?: HTMLElement
   drawLabel(): void
   animateBeacon?: AnimateBeaconOptions
-  jump(): void
+  jump(event?: any): void
   destroy?(): void
 }

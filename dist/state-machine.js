@@ -73,7 +73,7 @@ const fsm = xstate_1.Machine({
         },
     },
 });
-const ApiSpec = ({ dispatch }) => ({
+const ApiFactory = ({ dispatch }) => ({
     setConfig: (config) => {
         dispatch({ type: 'SET_CONFIG', config });
     },
@@ -84,7 +84,10 @@ const ApiSpec = ({ dispatch }) => ({
     reset: 'RESET',
     cancel: 'CANCEL',
     key: key => {
-        dispatch({ type: 'KEY', key });
+        if (typeof key === 'string') {
+            key = { key, ctrlKey: false, altKey: false, shiftKey: false };
+        }
+        dispatch(Object.assign({ type: 'KEY' }, key));
     },
 });
 const Data = (config) => ({
@@ -101,7 +104,7 @@ exports.createStateMachine = ({ config, adapter }) => stateful_machine_1.createS
     defaultActions: state_machine_actions_1.defaultActions,
     actionWrappers: state_machine_actions_1.actionWrappers,
     adapter,
-    ApiSpec,
+    ApiFactory,
     data: Data(config),
 });
 //# sourceMappingURL=state-machine.js.map

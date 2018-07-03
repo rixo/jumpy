@@ -1,3 +1,6 @@
+/**
+ * Utilities supporting smart case matching.
+ */
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });

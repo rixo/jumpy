@@ -19,7 +19,10 @@ const applyKeys = (data, event, { dispatch }) => {
     }
     else if (n1 === 1 && nKeys === numKeys) {
         const label = nextData.visibleLabels[0];
-        dispatch({ type: 'JUMP', label });
+        // we want to key original keys information in jump
+        // event in order to be able to handle complex
+        // combination (ctrl key in tab view)
+        dispatch(Object.assign({}, event, { type: 'JUMP', label }));
         return nextData;
     }
     else if (n1 === 0 || n1 >= n0) {

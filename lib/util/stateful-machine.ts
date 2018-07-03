@@ -22,14 +22,14 @@ type Params = {
   defaultActions,
   actionWrappers,
   adapter,
-  ApiSpec,
+  ApiFactory,
   data,
 }
 
 // Assembles a stateful state machine from a stateless xstate Machine,
 // action handlers, and initial data.
 export const createStatefulMachine = <Data, A extends Api> (params: Params) => {
-  const {fsm, data, ApiSpec} = params
+  const {fsm, data, ApiFactory} = params
 
   const stateMachine = <StateMachine<Data, A>> {
     state: fsm.initialState,
@@ -39,7 +39,7 @@ export const createStatefulMachine = <Data, A extends Api> (params: Params) => {
 
   stateMachine.dispatch = createDispatch(stateMachine, params)
 
-  stateMachine.api = <A> createApi(stateMachine, ApiSpec)
+  stateMachine.api = <A> createApi(stateMachine, ApiFactory)
 
   return stateMachine
 }

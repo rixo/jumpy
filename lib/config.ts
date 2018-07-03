@@ -16,7 +16,6 @@ export interface Config {
   hideMatchedChars: boolean
   // matchPattern: string
   wordsPattern: RegExp
-  treeViewAutoSelect: boolean
   preferAlternateHands: boolean
   smartCaseMatch: boolean
   customKeys: string[]
@@ -24,13 +23,15 @@ export interface Config {
   customKeysRight: string[]
   flashNoMatch: boolean
   statusBar: boolean
+  treeViewAutoSelect: boolean
+  treeViewCtrlKey: boolean
+  treeViewKeepFocus: boolean
 }
 
 export const parseConfig = (config): Config => ({
   numKeys: 2,
   fontSize: `${config.fontSize * 100}%`,
   wordsPattern: new RegExp(config.matchPattern, 'g'),
-  treeViewAutoSelect: true,
   useBuiltInRegexMatchAllTheThings:
     config.useBuiltInRegexMatchAllTheThings !== false,
   htmlTargetSelectors: [ // TODO config
@@ -136,5 +137,24 @@ export default {
     description: "Show Jumpy status in status bar.",
     type: 'boolean',
     default: true,
-  }
+  },
+  treeViewAutoSelect: {
+    description: "Open tree view jump target immediately.",
+    type: 'boolean',
+    default: true,
+  },
+  treeViewCtrlKey: {
+    description: "When enabled, pressing CTRL key while hitting the "
+    + "last character of a label reverse the effects of current "
+    + "configured tree view autoselect option.",
+    type: 'boolean',
+    default: true,
+  },
+  treeViewKeepFocus: {
+    description: "Keep focus in tree view after jump, when tree"
+    + " view autoselect is true. If autoselect is disabled, this"
+    + " option is ignored.",
+    type: 'boolean',
+    default: false,
+  },
 }

@@ -4,14 +4,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Assembles a stateful state machine from a stateless xstate Machine,
 // action handlers, and initial data.
 exports.createStatefulMachine = (params) => {
-    const { fsm, data, ApiSpec } = params;
+    const { fsm, data, ApiFactory } = params;
     const stateMachine = {
         state: fsm.initialState,
         data,
         getStatePath: () => getFirstPath(stateMachine.state.value),
     };
     stateMachine.dispatch = createDispatch(stateMachine, params);
-    stateMachine.api = exports.createApi(stateMachine, ApiSpec);
+    stateMachine.api = exports.createApi(stateMachine, ApiFactory);
     return stateMachine;
 };
 // Creates dispatch function for the given sateful machine

@@ -7,7 +7,7 @@ var Theme;
     Theme["HighContrast"] = "high-contrast";
     Theme["Vimium"] = "vimium";
 })(Theme = exports.Theme || (exports.Theme = {}));
-exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${config.fontSize * 100}%`, wordsPattern: new RegExp(config.matchPattern, 'g'), treeViewAutoSelect: true, useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false, htmlTargetSelectors: [
+exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${config.fontSize * 100}%`, wordsPattern: new RegExp(config.matchPattern, 'g'), useBuiltInRegexMatchAllTheThings: config.useBuiltInRegexMatchAllTheThings !== false, htmlTargetSelectors: [
         'a',
         'button:not([tabIndex="-1"])',
         'input:not([tabIndex="-1"])',
@@ -107,6 +107,25 @@ exports.default = {
         description: "Show Jumpy status in status bar.",
         type: 'boolean',
         default: true,
-    }
+    },
+    treeViewAutoSelect: {
+        description: "Open tree view jump target immediately.",
+        type: 'boolean',
+        default: true,
+    },
+    treeViewCtrlKey: {
+        description: "When enabled, pressing CTRL key while hitting the "
+            + "last character of a label reverse the effects of current "
+            + "configured tree view autoselect option.",
+        type: 'boolean',
+        default: true,
+    },
+    treeViewKeepFocus: {
+        description: "Keep focus in tree view after jump, when tree"
+            + " view autoselect is true. If autoselect is disabled, this"
+            + " option is ignored.",
+        type: 'boolean',
+        default: false,
+    },
 };
 //# sourceMappingURL=config.js.map

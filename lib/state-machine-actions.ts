@@ -23,7 +23,10 @@ const applyKeys = (data: Data, event, {dispatch}) => {
     dispatch({...event, type: 'MATCH'})
   } else if (n1 === 1 && nKeys === numKeys) {
     const label = nextData.visibleLabels[0]
-    dispatch({type: 'JUMP', label})
+    // we want to key original keys information in jump
+    // event in order to be able to handle complex
+    // combination (ctrl key in tab view)
+    dispatch({...event, type: 'JUMP', label})
     return nextData
   } else if (n1 === 0 || n1 >= n0) {
     // no match

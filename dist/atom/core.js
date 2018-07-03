@@ -7,18 +7,14 @@ const config_1 = require("../config");
 const adapter_keyboard_1 = require("./adapter-keyboard");
 const adapter_labels_1 = require("./adapter-labels");
 const adapter_status_1 = require("./adapter-status");
+const adapter_focus_1 = require("./adapter-focus");
 const configKeyPath = 'jumpy';
 const createAdapter = ({ config, statusBar, onBlur, onKey }) => {
+    const focus = adapter_focus_1.default();
     const keyboard = adapter_keyboard_1.default({ onBlur, onKey });
     const labels = adapter_labels_1.default(config);
     const { adapter: status = {}, destroy: destroyStatus = () => { }, } = statusBar && adapter_status_1.default(statusBar) || {};
-    const adapter = Object.assign({}, keyboard, labels, status || {}, { focus: () => {
-            const workspaceEl = atom.views.getView(atom.workspace);
-            workspaceEl.classList.add('jumpy-jump-mode');
-        }, blur: () => {
-            const workspaceEl = atom.views.getView(atom.workspace);
-            workspaceEl.classList.remove('jumpy-jump-mode');
-        } });
+    const adapter = Object.assign({}, focus, keyboard, labels, status || {});
     const destroy = () => {
         destroyStatus();
     };

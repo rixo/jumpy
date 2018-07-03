@@ -2,7 +2,6 @@
 
 import {Label, LabelPosition} from '../adapter-labels/label'
 import {Labeler, LabelEnvironment} from '../labelers'
-import {} from '../adapter-labels'
 
 // wrap closure (for eye candies)
 const $$$ = fn => fn()

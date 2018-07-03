@@ -9,6 +9,7 @@ import {Config, parseConfig} from '../config'
 import KeyboardManager from './adapter-keyboard'
 import Labels from './adapter-labels'
 import Status from './adapter-status'
+import Focus from './adapter-focus'
 
 const configKeyPath = 'jumpy'
 
@@ -19,6 +20,7 @@ const createAdapter = ({
 }: {
   config: Config, statusBar: StatusBar, onBlur: Function, onKey: Function
 }): {adapter: Adapter, destroy()} => {
+  const focus = Focus()
   const keyboard = KeyboardManager({onBlur, onKey})
   const labels = Labels(config)
   const {
@@ -26,17 +28,10 @@ const createAdapter = ({
     destroy: destroyStatus = () => {},
   } = statusBar && Status(statusBar) || {}
   const adapter: Adapter = {
+    ...focus,
     ...keyboard,
     ...labels,
     ...status || {},
-    focus: () => {
-      const workspaceEl = atom.views.getView(atom.workspace)
-      workspaceEl.classList.add('jumpy-jump-mode')
-    },
-    blur: () => {
-      const workspaceEl = atom.views.getView(atom.workspace)
-      workspaceEl.classList.remove('jumpy-jump-mode')
-    },
   }
   const destroy = () => {
     destroyStatus()

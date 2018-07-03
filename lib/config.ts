@@ -66,12 +66,6 @@ export default {
       {value: 'vimium', description: "Vimium"},
     ]
   },
-  // highContrast: {
-  //     description: 'This will display a high contrast label, \
-  //     usually green.  It is dynamic per theme.',
-  //     type: 'boolean',
-  //     default: false,
-  // },
   useHomingBeaconEffectOnJumps: {
     description: 'This will animate a short lived homing beacon upon \
     jump.',

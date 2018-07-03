@@ -56,6 +56,7 @@ export interface KeyboardAdapter {
   releaseKeyboard: ActionHandler
 }
 
+// manages jumpy classes to workspace
 export interface FocusAdapter {
   focus: ActionHandler
   blur: ActionHandler

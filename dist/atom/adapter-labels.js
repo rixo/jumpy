@@ -93,8 +93,9 @@ exports.default = (config) => {
             label.jump();
         },
         animateBeacon: ({}, { label }) => {
-            // TODO env is not public in Label
-            label.env.labels.animateBeacon(label);
+            if (labelManager) {
+                labelManager.animateBeacon(label);
+            }
         },
         flashNoMatch,
     };

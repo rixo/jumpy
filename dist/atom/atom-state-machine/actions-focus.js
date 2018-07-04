@@ -11,4 +11,4 @@ exports.default = () => ({
         workspaceEl.classList.remove('jumpy-jump-mode');
     },
 });
-//# sourceMappingURL=adapter-focus.js.map
+//# sourceMappingURL=actions-focus.js.map

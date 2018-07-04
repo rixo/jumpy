@@ -1,10 +1,10 @@
 'use babel'
 
 import {Adapter} from '../../state-machine'
-import KeyboardManager from './adapter-keyboard'
-import Labels from './adapter-labels'
-import Status from './adapter-status'
-import Focus from './adapter-focus'
+import KeyboardManager from './actions-keyboard'
+import Labels from './actions-labels'
+import Status from './actions-status'
+import Focus from './actions-focus'
 
 type StatusBar = any
 

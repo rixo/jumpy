@@ -1,8 +1,8 @@
 'use babel'
 
 import {getKeySet} from '../../keyset'
-import {createLabelManager, LabelManager} from '../adapter-labels/label-manager'
-import {createTextEditorLocators} from '../adapter-labels/editor-coords'
+import {createLabelManager, LabelManager} from '../labels/label-manager'
+import {createTextEditorLocators} from '../labels/editor-coords'
 import {LabelEnvironment, getLabels} from '../labelers'
 import {Data, LabelAdapter, FlashAdapter} from '../../state-machine'
 

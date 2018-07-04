@@ -3,8 +3,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const keyset_1 = require("../../keyset");
-const label_manager_1 = require("../adapter-labels/label-manager");
-const editor_coords_1 = require("../adapter-labels/editor-coords");
+const label_manager_1 = require("../labels/label-manager");
+const editor_coords_1 = require("../labels/editor-coords");
 const labelers_1 = require("../labelers");
 exports.default = () => {
     let labelManager = null;
@@ -109,4 +109,4 @@ const renderLabel = label => {
     label.drawLabel();
     return label;
 };
-//# sourceMappingURL=adapter-labels.js.map
+//# sourceMappingURL=actions-labels.js.map

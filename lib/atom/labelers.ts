@@ -1,9 +1,9 @@
 'use babel'
 
 import {Config} from '../config'
-import {getCoordsInEditor} from './adapter-labels/editor-coords'
-import {LabelManager} from './adapter-labels/label-manager'
-import {Label} from './adapter-labels/label'
+import {getCoordsInEditor} from './labels/editor-coords'
+import {LabelManager} from './labels/label-manager'
+import {Label} from './labels/label'
 import getWordLabels from './labelers/words'
 import getTabLabels from './labelers/tabs'
 import getSettingsLabels from './labelers/settings'

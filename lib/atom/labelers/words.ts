@@ -2,7 +2,7 @@
 
 import * as _ from 'lodash'
 import {Point, TextEditor as TextEditorBase} from 'atom'
-import {Label, LabelPosition} from '../adapter-labels/label'
+import {Label, LabelPosition} from '../labels/label'
 import {Labeler, LabelEnvironment} from '../labelers'
 import getRegex from '../../util/regex-match-all-the-things-dev-loader'
 

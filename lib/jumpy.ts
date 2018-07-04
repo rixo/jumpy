@@ -24,7 +24,7 @@ module.exports = {
   },
   consumeVimModePlus(vim) {
     // lazy load optional vim-mode-plus integation
-    const {setup} = require('./interop-vim-mode-plus-motion')
+    const {setup} = require('./atom/interop-vim-mode-plus-motion')
     setup(this, vim)
   },
 }

@@ -1,6 +1,6 @@
 'use babel';
 
-import {Label, LabelPosition} from '../adapter-labels/label'
+import {Label, LabelPosition} from '../labels/label'
 import {Labeler, LabelEnvironment} from '../labelers'
 import {TextEditor, Pane} from 'atom'
 

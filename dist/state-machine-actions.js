@@ -1,7 +1,7 @@
 'use babel';
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const label_matcher_1 = require("./label-matcher");
+const label_matcher_1 = require("./util/label-matcher");
 // This is the most important default action: it is called
 // when a new key is entered (or backed from -- in essence,
 // when currently entered keys change) and automatically

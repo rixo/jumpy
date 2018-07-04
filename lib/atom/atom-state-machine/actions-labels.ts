@@ -1,6 +1,6 @@
 'use babel'
 
-import {getKeySet} from '../../keyset'
+import {getKeySet} from '../../util/keyset'
 import {createLabelManager, LabelManager} from '../labels/label-manager'
 import {createTextEditorLocators} from '../labels/editor-coords'
 import {LabelEnvironment, getLabels} from '../labelers'

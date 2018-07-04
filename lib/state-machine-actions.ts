@@ -1,7 +1,7 @@
 'use babel'
 
 import {Data} from './state-machine'
-import {filterLabels} from './label-matcher'
+import {filterLabels} from './util/label-matcher'
 
 // This is the most important default action: it is called
 // when a new key is entered (or backed from -- in essence,

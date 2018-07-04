@@ -4,8 +4,8 @@
 
 'use babel'
 
-import {Config} from './config'
-import {Label} from './label-interface'
+import {Config} from '../config'
+import {Label} from '../label-interface'
 
 interface Data {
   config: Config

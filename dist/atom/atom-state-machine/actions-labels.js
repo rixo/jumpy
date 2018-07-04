@@ -2,7 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
-const keyset_1 = require("../../keyset");
+const keyset_1 = require("../../util/keyset");
 const label_manager_1 = require("../labels/label-manager");
 const editor_coords_1 = require("../labels/editor-coords");
 const labelers_1 = require("../labelers");

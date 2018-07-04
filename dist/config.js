@@ -106,7 +106,7 @@ exports.default = {
         default: false,
     },
     statusBar: {
-        description: "Show Jumpy status in status bar.",
+        description: "Show Jumpy messages in status bar.",
         type: 'boolean',
         default: true,
     },
@@ -117,7 +117,7 @@ exports.default = {
     },
     treeViewCtrlKey: {
         description: "When enabled, pressing CTRL key while hitting the "
-            + "last character of a label reverse the effects of current "
+            + "last character of a label reverses the effects of current "
             + "configured tree view autoselect option.",
         type: 'boolean',
         default: true,

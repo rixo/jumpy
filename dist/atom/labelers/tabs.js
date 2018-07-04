@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const atom_1 = require("atom");
 // settings tab needs special CSS selectors
+// TODO Project Find Results (ctrl-shift-f) tab needs special selector too
 let SettingsView;
 try {
     SettingsView = window.require('settings-view/lib/settings-view');

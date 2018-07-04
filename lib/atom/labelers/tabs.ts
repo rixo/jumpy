@@ -5,6 +5,7 @@ import {Labeler, LabelEnvironment} from '../labelers'
 import {TextEditor, Pane} from 'atom'
 
 // settings tab needs special CSS selectors
+// TODO Project Find Results (ctrl-shift-f) tab needs special selector too
 let SettingsView
 try {
   SettingsView = (<any> window).require('settings-view/lib/settings-view')

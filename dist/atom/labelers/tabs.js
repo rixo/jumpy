@@ -2,12 +2,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const atom_1 = require("atom");
+// settings tab needs special CSS selectors
 let SettingsView;
 try {
     SettingsView = window.require('settings-view/lib/settings-view');
 }
 catch (err) {
-    // disable settings view support (maybe some warning?)
+    // disable settings view support
+    // TODO maybe some warning?
 }
 class TabLabel {
     constructor() {
@@ -35,7 +37,7 @@ class TabLabel {
     }
 }
 const getPaneItemSelector = paneItem => {
-    if (paneItem instanceof SettingsView) {
+    if (SettingsView && paneItem instanceof SettingsView) {
         return '[data-type="SettingsView"] .title';
     }
     else if (paneItem instanceof atom_1.TextEditor) {

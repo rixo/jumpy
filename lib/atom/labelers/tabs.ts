@@ -4,12 +4,15 @@ import {Label, LabelPosition} from '../adapter-labels/label'
 import {Labeler, LabelEnvironment} from '../labelers'
 import {TextEditor, Pane} from 'atom'
 
+// settings tab needs special CSS selectors
 let SettingsView
 try {
   SettingsView = (<any> window).require('settings-view/lib/settings-view')
 } catch (err) {
-  // disable settings view support (maybe some warning?)
+  // disable settings view support
+  // TODO maybe some warning?
 }
+
 class TabLabel implements Label {
     // TODO: check I need these defined again?
     env: LabelEnvironment
@@ -18,7 +21,6 @@ class TabLabel implements Label {
     targetEl: HTMLElement
     paneItem: object
     element: HTMLElement | null
-    settings: any
     selector: string
     animateBeacon: {delay: number, cssClass: string}
 
@@ -56,7 +58,7 @@ class TabLabel implements Label {
 }
 
 const getPaneItemSelector = paneItem => {
-  if (paneItem instanceof SettingsView) {
+  if (SettingsView && paneItem instanceof SettingsView) {
       return '[data-type="SettingsView"] .title'
   } else if (paneItem instanceof TextEditor) {
       return `[data-path="${paneItem.getPath()}"]`

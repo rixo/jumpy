@@ -22,6 +22,7 @@ exports.parseConfig = (config) => (Object.assign({ numKeys: 2, fontSize: `${conf
         '.sub-section-heading.has-items$right',
         '.repo-link',
         '.clickable',
+        '.github-FilePatchListView-item',
     ] }, config));
 exports.default = {
     fontSize: {

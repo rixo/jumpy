@@ -19,6 +19,7 @@ class HtmlViewLabel implements Label {
   attachEl: HTMLElement
   targetSelectorOptions: string
   settingsView: any
+  customJump?: Function
 
   drawLabel(): void {
     const {
@@ -50,17 +51,19 @@ class HtmlViewLabel implements Label {
 
   jump() {
     const isEditor = el => !!el.closest('atom-text-editor')
-    const jump = () => {
-      const {targetEl: el} = this
-      if (isEditor(el)) {
-        el.click()
-        el.focus()
-      } else if (el.click) {
-        el.click()
-      } else if (el.focus) {
-        el.focus()
-      }
-    }
+    const jump = this.customJump
+      ? (() => this.customJump(this))
+      : (() => {
+        const {targetEl: el} = this
+        if (isEditor(el)) {
+          el.click()
+          el.focus()
+        } else if (el.click) {
+          el.click()
+        } else if (el.focus) {
+          el.focus()
+        }
+      })
     // give some time to the beacon to avoid having it lost to lag
     // due to changing setting "page"
     if (atom.config.get('jumpy.useHomingBeaconEffectOnJumps')) {
@@ -71,19 +74,38 @@ class HtmlViewLabel implements Label {
   }
 }
 
-export default ({viewClassFiles}) => {
+const createClassIsTrackedView = viewClassFiles => {
   const ViewClasses = []
   try {
     viewClassFiles
       .map(source => (<any> window).require(source))
+      .map(source => source.default || source)
       .forEach(Class => ViewClasses.push(Class))
   } catch (err) {
     // disable settings view support (maybe some warning?)
   }
+  return item => ViewClasses.some(View => item instanceof View)
+}
+
+const createIsTrackedView = ({
+  isTrackedView: customIsTrackedView,
+  viewClassFiles,
+}) => {
+  if (customIsTrackedView) {
+    return customIsTrackedView
+  } else if (viewClassFiles) {
+    return createClassIsTrackedView(viewClassFiles)
+  } else {
+    throw new Error('Jumpy: createHtmlLabeld: Invalid config')
+  }
+}
+
+export default (config) => {
+  const {jump: customJump} = config
+
+  const isTrackedView = createIsTrackedView(config)
 
   const labeler: Labeler = $$$(() => {
-
-    const isTrackedView = item => ViewClasses.some(View => item instanceof View)
 
     const withPaneView = (pane): {pane, view: HTMLElement} => {
       const view = atom.views.getView(pane)
@@ -126,6 +148,7 @@ export default ({viewClassFiles}) => {
         label.targetEl = targetEl
         label.targetSelectorOptions = selectorOptions
         label.settingsView = paneItem
+        label.customJump = customJump
         return label
       }
 
@@ -148,7 +171,7 @@ export default ({viewClassFiles}) => {
     const concatAll = (a, b) => a.concat(b)
 
     return (env:LabelEnvironment): Array<HtmlViewLabel> => {
-      if (!ViewClasses) {
+      if (!isTrackedView) {
         return []
       }
       const getItem = pane => pane.getItem()

@@ -9,6 +9,7 @@ import getTabLabels from './labelers/tabs'
 import getSettingsLabels from './labelers/settings'
 import getTreeViewLabels from './labelers/tree-view'
 import getFindViewLabels from './labelers/find-view'
+import getGithubPaneLabels from './labelers/github-pane'
 
 export interface LabelEnvironment {
   settings: Config
@@ -30,6 +31,7 @@ export const getLabels = (environment: LabelEnvironment) => {
     getTreeViewLabels,
     getTabLabels,
     getFindViewLabels,
+    // getGithubPaneLabels,
   ]
   const otherLabels = otherLabellers
     .map(getLabels => getLabels(environment))
